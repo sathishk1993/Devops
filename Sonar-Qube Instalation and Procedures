@@ -1,0 +1,88 @@
+EC2-3 (SonarQube Server)
+1. Install Docker
+sudo yum update -y
+sudo yum install docker -y
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker ec2-user
+Log out and log back in.
+2. Verify Docker
+docker --version
+docker ps
+3. Create Docker Network
+docker network create sonarnet
+4. Run PostgreSQL Container
+docker run -d \
+--name postgres \
+--network sonarnet \
+-e POSTGRES_USER=sonar \
+-e POSTGRES_PASSWORD=sonar123 \
+-e POSTGRES_DB=sonar \
+-v postgres_data:/var/lib/postgresql/data \
+postgres:15
+Verify:
+docker ps
+5. Run SonarQube Container
+docker run -d \
+--name sonarqube \
+--network sonarnet \
+-p 9000:9000 \
+-e SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonar \
+-e SONAR_JDBC_USERNAME=sonar \
+-e SONAR_JDBC_PASSWORD=sonar123 \
+-v sonarqube_data:/opt/sonarqube/data \
+-v sonarqube_extensions:/opt/sonarqube/extensions \
+sonarqube:lts-community
+6. Verify
+docker ps
+7. Access SonarQube
+http://<EC2-3-Public-IP>:9000
+Default login:
+Username: admin
+Password: admin
+8. Security Group
+Allow inbound:
+TCP 9000 → Your IP (or as needed)
+That's all.
+ 
+Once SonarQube is running on EC2-3, the Jenkins agent does not connect directly. The Jenkins server initiates the SonarQube analysis and the scanner (running on the agent) sends the report to the SonarQube server.
+Architecture:
+Developer
+    |
+GitHub
+    |
+Jenkins Master
+    |
+Jenkins Agent (Sonar Scanner)
+    |
+    | HTTP (Port 9000)
+    |
+SonarQube Server (EC2-3)
+Steps
+Install SonarScanner on the Jenkins Agent (EC2-2)
+In SonarQube (EC2-3):
+Login as admin
+Go to Administration → Security → Users → Tokens
+Generate a token
+In Jenkins Master:
+Manage Jenkins → Plugins
+Install SonarQube Scanner plugin.
+Manage Jenkins → System
+Add a SonarQube server:
+Name: SonarQube
+Server URL: http://<EC2-3-private-ip>:9000
+Authentication Token: Add the token as a Jenkins credential.
+Manage Jenkins → Tools
+Configure SonarScanner.
+In your Jenkins pipeline:
+withSonarQubeEnv('SonarQube') {
+    sh 'sonar-scanner'
+}
+or for a Maven project:
+withSonarQubeEnv('SonarQube') {
+    sh 'mvn sonar:sonar'
+}
+Important
+EC2-2 (Agent) must be able to reach EC2-3:9000.
+In AWS, allow port 9000 in the SonarQube EC2 security group from the Jenkins EC2 security group (or the Jenkins agent's private IP).
+ 
