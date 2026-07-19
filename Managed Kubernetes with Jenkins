@@ -1,0 +1,42 @@
+Managed Kubernetes (Amazon EKS) Integration with Jenkins
+We integrate Jenkins with Amazon EKS so Jenkins can deploy application manifests to the Kubernetes cluster after a successful build.
+1. Create an Amazon EKS Cluster
+  - Create the EKS cluster.
+  - Create worker nodes (Managed Node Group).
+2. Install kubectl on Jenkins Agent
+  - Install kubectl.
+  - Verify installation:
+    kubectl version --client
+3. Configure AWS CLI
+  - Install AWS CLI on the Jenkins Agent.
+  - Configure AWS credentials:
+    aws configure
+4. Connect Jenkins to EKS
+  - Update the kubeconfig file:
+    aws eks update-kubeconfig --region <region> --name <cluster-name>
+  - Verify the connection:
+    kubectl get nodes
+5. Install Required Tools
+  - Install Git.
+  - Install Docker.
+  - Install kubectl.
+  - Install AWS CLI.
+6. Store AWS Credentials in Jenkins
+  - Manage Jenkins → Credentials
+  - Add AWS Access Key ID and Secret Access Key.
+7. Configure Jenkins Pipeline
+  - Use the stored AWS credentials.
+  - Execute kubectl commands or update the Kubernetes manifests.
+  - Push manifest changes to the GitHub Manifest Repository (GitOps).
+8. Deployment
+  - ArgoCD monitors the Manifest Repository.
+  - Detects the updated image tag.
+  - Automatically synchronizes the changes.
+  - Deploys the application to the Amazon EKS cluster.
+9. Verify Deployment
+  - Check cluster nodes:
+    kubectl get nodes
+  - Check pods:
+    kubectl get pods -n <namespace>
+  - Check services:
+    kubectl get svc -n <namespace>
