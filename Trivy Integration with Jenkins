@@ -1,0 +1,62 @@
+Trivy Integration with Jenkins
+
+We integrate Trivy with Jenkins so Jenkins can scan the source code, file system, and Docker images for vulnerabilities and misconfigurations before pushing images to the container registry or deploying to Kubernetes.
+
+1. Install Trivy
+
+   - Install Trivy on the Jenkins Agent.
+
+   - Verify the installation:
+
+     trivy --version
+
+2. Install Required Plugins (Optional)
+
+   - Manage Jenkins → Plugins
+
+   - Install:
+
+     - HTML Publisher Plugin (to publish Trivy reports)
+
+3. Configure Jenkins Pipeline
+
+   - Run File System Scan:
+
+     trivy fs .
+
+   - Run Docker Image Scan:
+
+     trivy image <image-name>:<tag>
+
+4. Generate Trivy Reports
+
+   - Generate vulnerability reports in HTML or JSON format.
+
+   - Store the reports as Jenkins build artifacts.
+
+5. Publish Trivy Reports
+
+   - Publish the generated reports using the HTML Publisher Plugin.
+
+   - View the reports from the Jenkins build page.
+
+6. Configure Build Failure (Optional)
+
+   - Fail the pipeline if HIGH or CRITICAL vulnerabilities are detected.
+
+   - Continue the pipeline only if the vulnerability threshold is acceptable.
+
+7. Pipeline Execution
+
+   - Jenkins pulls the source code.
+
+   - Trivy scans the source code and Docker image.
+
+   - Vulnerability reports are generated.
+
+   - Jenkins evaluates the scan results.
+
+   - If no critical vulnerabilities are found, the pipeline continues.
+
+   - If critical vulnerabilities are detected, the pipeline stops.
+ 
