@@ -1,0 +1,101 @@
+GitHub Integration with Jenkins
+
+We integrate GitHub with Jenkins so Jenkins can securely access the source code and automatically trigger pipelines whenever developers push code to the GitHub repository.
+
+1. Install Required Plugins
+
+   - Manage Jenkins → Plugins
+
+   - Install:
+
+     - Git Plugin
+
+     - GitHub Plugin
+
+2. Generate GitHub Personal Access Token (PAT)
+
+   - GitHub → Settings → Developer Settings
+
+   - Personal Access Tokens → Generate New Token
+
+   - Grant Repository permissions.
+
+   - Copy the generated token.
+
+3. Add GitHub Credentials in Jenkins
+
+   - Manage Jenkins → Credentials
+
+   - Global → Add Credentials
+
+   - Kind: Username with Password
+
+   - Username: GitHub Username
+
+   - Password: Personal Access Token (PAT)
+
+   - ID: github-creds
+
+4. Create a Jenkins Pipeline Job
+
+   - New Item → Pipeline
+
+   - Pipeline Definition → Pipeline script from SCM
+
+   - SCM → Git
+
+5. Configure Git Repository
+
+   - Repository URL:
+https://github.com/<username>/<repository>.git
+
+   - Credentials:
+
+     github-creds
+
+   - Branch:
+
+     main
+
+   - Script Path:
+
+     Jenkinsfile
+
+6. Configure GitHub Webhook (Recommended)
+
+   - GitHub Repository → Settings → Webhooks
+
+   - Add Webhook
+
+   - Payload URL:
+
+     http://<jenkins-url>/github-webhook/
+
+   - Content Type:
+
+     application/json
+
+   - Events:
+
+     Just the push event
+
+7. Configure Build Trigger in Jenkins
+
+   - Open Jenkins Job → Configure
+
+   - Build Triggers
+
+   - Enable:
+
+     GitHub hook trigger for GITScm polling
+
+8. Pipeline Execution
+
+   - Developer pushes code to GitHub.
+
+   - GitHub sends a webhook to Jenkins.
+
+   - Jenkins pulls the latest source code using the configured credentials.
+
+   - Jenkins executes the Jenkinsfile and starts the CI/CD pipeline.
+ 
