@@ -1,6 +1,6 @@
 Recommended Flow
 1. Create Infrastructure
-Create EC2-1 → Jenkins Master
+Create EC2-1 → Jenkins Master  (Install Jenkins, Java)
 Create EC2-2 → Jenkins Agent (Build Node)
 2. Jenkins Master >> Install Java, Jenkins
 Configure the build agent
