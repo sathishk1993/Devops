@@ -4,7 +4,7 @@ Create EC2-1 → Jenkins Master  (Usercreation using useradd, Install Jenkins, J
 Create EC2-2 → Jenkins Agent (Build Node) Install required plugins if needed
 Git, Docker, Trivy,Java,SonarQube Scanner , AWS Credentials, kubectl,AWS CLI
 Maven/Gradle (depending on project)
-
+In agent node whichever is need to run the build,install it
 
 SonarQube should NOT be installed on the build node.
 Instead:
