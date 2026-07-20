@@ -1,0 +1,22 @@
+kubectl Installation (Jenkins Agent)
+
+1. Update the Server
+
+sudo apt update
+sudo apt upgrade -y
+
+2. Download the latest kubectl
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+3. Make kubectl executable
+
+chmod +x kubectl
+
+4. Move kubectl to the system path
+
+sudo mv kubectl /usr/local/bin/
+
+5. Verify Installation
+
+kubectl version --client
