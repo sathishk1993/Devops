@@ -1,26 +1,11 @@
 Recommended Flow
 1. Create Infrastructure
-Create EC2-1 → Jenkins Master  (Install Jenkins, Java)
-Create EC2-2 → Jenkins Agent (Build Node)
-
-Configure the build agent
-Install required plugins
-Git
-Docker
-Pipeline
-SonarQube Scanner
-AWS Credentials
-SSH Agent (if required)
-3. Jenkins Agent (Build Node)
-Install:
-Java
+Create EC2-1 → Jenkins Master  (Usercreation using useradd, Install Jenkins, Java)
+Create EC2-2 → Jenkins Agent (Build Node) Install required plugins if needed
+Git, Docker, Trivy,Java,SonarQube Scanner , AWS Credentials, kubectl,AWS CLI
 Maven/Gradle (depending on project)
-Docker
-Trivy
-SonarQube Scanner
-AWS CLI
-kubectl (optional)
-Git
+
+
 SonarQube should NOT be installed on the build node.
 Instead:
 Run SonarQube on a separate EC2 instance or as a Docker container.
