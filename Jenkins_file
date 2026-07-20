@@ -9,7 +9,7 @@ pipeline {
         stage('SCM_Checkout') {
             steps {
                 echo 'Perform SCM Checkout'
-				git 'https://github.com/PL-DevOps-GenAI-0625/BankingWebApp.git'			
+				git 'https://github.com/sathishk1993/Devops.git'			
             }
         }
         stage('Application Build') {
