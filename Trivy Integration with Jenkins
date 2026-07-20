@@ -1,14 +1,38 @@
 Trivy Integration with Jenkins
 
-We integrate Trivy with Jenkins so Jenkins can scan the source code, file system, and Docker images for vulnerabilities and misconfigurations before pushing images to the container registry or deploying to Kubernetes.
+We integrate Trivy with Jenkins so Jenkins can scan the source code, file system, and Docker images for vulnerabilities and 
+misconfigurations before pushing images to the container registry or deploying to Kubernetes.
 
-1. Install Trivy
+Install Trivy on the Jenkins Agent.
 
-   - Install Trivy on the Jenkins Agent.
+1. Update the Server
 
-   - Verify the installation:
+sudo apt update
+sudo apt upgrade -y
 
-     trivy --version
+2. Install Required Packages
+
+sudo apt install wget gnupg lsb-release apt-transport-https -y
+
+3. Add Trivy GPG Key
+
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+
+4. Add Trivy Repository
+
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+
+5. Update Package List
+
+sudo apt update
+
+6. Install Trivy
+
+sudo apt install trivy -y
+
+7. Verify Installation
+
+trivy --version
 
 2. Install Required Plugins (Optional)
 
