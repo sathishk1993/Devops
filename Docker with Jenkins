@@ -14,7 +14,7 @@
    docker ps
 
 5. Install Java (Required for Jenkins)
-   sudo apt install openjdk-17-jdk -y
+   sudo apt install openjdk-21-jdk -y
    java --version
 
 6. Install Jenkins
