@@ -1,0 +1,4 @@
+useradd sathish -s /bin/bash -m -d /home/sathish
+su - sathish
+ssh-keygen -t ecdsa -b 521
+copy the public key into Vi authorized_keys

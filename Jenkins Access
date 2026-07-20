@@ -1,0 +1,43 @@
+We integrate Jenkins with Active Directory so Jenkins can authenticate users and assign permissions based on AD groups like Developers, QA, and Admins.
+
+Active Directory (AD) Integration with Jenkins
+1. Install Active Directory Plugin
+  - Manage Jenkins → Plugins
+  - Install "Active Directory" plugin.
+2. Configure Security Realm
+  - Manage Jenkins → Security
+  - Security Realm → Active Directory
+  - Enter:
+    - Domain Name
+    - Domain Controller
+    - Bind DN
+    - Bind Password
+3. Configure Authorization
+  - Manage Jenkins → Security
+  - Authorization → Matrix-based Security
+4. Create Groups in Active Directory
+  - Open Active Directory Users and Computers (ADUC)
+  - Right-click OU → New → Group
+  - Create:
+    - Developers
+    - QA
+    - Admins
+5. Add Users to Groups
+  - Open the group
+  - Members → Add
+  - Add users
+    - Developers → John, Alice
+    - QA → Tester1, Tester2
+    - Admins → DevOps1
+6. Assign Permissions in Jenkins
+  - Add group names:
+    - Developers
+    - QA
+    - Admins
+  - Grant permissions:
+    - Developers → Read, Build
+    - QA → Read (or Build if required)
+    - Admins → Full Access
+7. User Login
+  - Users log in using their Active Directory credentials.
+  - Jenkins checks the user's AD group membership and automatically applies the permissions assigned to that group.

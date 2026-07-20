@@ -1,0 +1,110 @@
+Recommended Flow
+1. Create Infrastructure
+Create EC2-1 → Jenkins Master
+Create EC2-2 → Jenkins Agent (Build Node)
+2. Jenkins Master >> Install Java, Jenkins
+Configure the build agent
+Install required plugins
+Git
+Docker
+Pipeline
+SonarQube Scanner
+AWS Credentials
+SSH Agent (if required)
+3. Jenkins Agent (Build Node)
+Install:
+Java
+Maven/Gradle (depending on project)
+Docker
+Trivy
+SonarQube Scanner
+AWS CLI
+kubectl (optional)
+Git
+SonarQube should NOT be installed on the build node.
+Instead:
+Run SonarQube on a separate EC2 instance or as a Docker container.
+Jenkins only connects to the SonarQube server for code analysis.
+CI Pipeline
+Git Push
+      │
+      ▼
+Jenkins Pipeline
+      │
+Checkout Code
+      │
+Compile & Build
+      │
+Unit Tests
+      │
+SonarQube Analysis
+      │
+Quality Gate
+      │
+Trivy File System Scan
+      │
+Build Docker Image
+      │
+Trivy Image Scan
+      │
+Optimize Docker Image (multi-stage build)
+      │
+Tag Image
+      │
+Push Image to AWS ECR
+CD Pipeline (GitOps)
+Image pushed to ECR
+        │
+        ▼
+Second Jenkins Pipeline
+        │
+Checkout Kubernetes Manifest Repo
+        │
+Update Deployment YAML
+(image: app:v2)
+        │
+Commit & Push to Git
+        │
+ArgoCD detects Git change
+        │
+Sync Kubernetes Cluster
+        │
+Deploy New Version
+Where ArgoCD Runs
+ArgoCD is not usually installed on the Jenkins slave node.
+Typical setup:
+EC2-1  -> Jenkins
+EC2-2  -> Jenkins Agent
+EC2-3  -> Kubernetes Cluster (or EKS)
+            |
+            └── ArgoCD installed inside Kubernetes
+ArgoCD continuously watches the Git repository and automatically deploys any manifest changes.
+Complete Architecture
+Developer
+    │
+    ▼
+GitHub (Application Code)
+    │
+    ▼
+Jenkins Master
+    │
+    ▼
+Jenkins Agent
+    │
+    ├── Build
+    ├── Unit Test
+    ├── SonarQube Scan
+    ├── Trivy Scan
+    ├── Docker Build
+    └── Push Image to AWS ECR
+                 │
+                 ▼
+      GitHub (Manifest Repository)
+                 │
+      Update image tag automatically
+                 │
+                 ▼
+           ArgoCD
+                 │
+                 ▼
+      Kubernetes / Amazon EKS

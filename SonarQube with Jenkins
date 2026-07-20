@@ -1,0 +1,45 @@
+SonarQube Integration with Jenkins
+We integrate SonarQube with Jenkins so Jenkins can perform static code analysis, identify code quality issues, detect bugs, vulnerabilities, and enforce Quality Gates before building and deploying the application.
+1. Install SonarQube
+  - Install SonarQube on a dedicated server or Docker container.
+  - Configure the PostgreSQL database.
+  - Verify SonarQube is accessible on port 9000.
+2. Generate SonarQube Token
+  - Log in to SonarQube.
+  - My Account → Security.
+  - Generate a User Token.
+  - Copy the generated token.
+3. Configure SonarQube in Jenkins
+  - Manage Jenkins → System.
+  - SonarQube Servers → Add SonarQube.
+  - Enter:
+    - Name
+    - Server URL
+    - Authentication Token
+4. Add SonarQube Token in Jenkins
+  - Manage Jenkins → Credentials.
+  - Add Secret Text.
+  - Paste the SonarQube Token.
+  - Assign a Credential ID.
+5. Install Required Plugins
+  - Manage Jenkins → Plugins.
+  - Install:
+    - SonarQube Scanner
+    - SonarQube Quality Gates Plugin (if required)
+6. Configure SonarScanner
+  - Manage Jenkins → Tools.
+  - Add SonarScanner installation.
+  - Give it a name (e.g., SonarScanner).
+  - Install automatically or provide the installation path.
+7. Configure Jenkins Pipeline
+  - Use the SonarQube environment.
+  - Execute the SonarScanner command.
+  - Wait for the Quality Gate result.
+  - Continue the pipeline only if the Quality Gate passes.
+8. Pipeline Execution
+  - Jenkins pulls the source code.
+  - SonarQube scans the source code.
+  - Code quality reports are generated.
+  - Jenkins checks the Quality Gate.
+  - If the Quality Gate passes, the pipeline continues.
+  - If the Quality Gate fails, the pipeline stops.

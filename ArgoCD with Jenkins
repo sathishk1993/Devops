@@ -1,0 +1,40 @@
+ArgoCD Integration with Jenkins
+We integrate ArgoCD with Jenkins using the GitOps approach so Jenkins updates the Kubernetes manifests in a GitHub repository, and ArgoCD automatically deploys the changes to the Kubernetes cluster.
+1. Install ArgoCD
+  - Install ArgoCD in the Kubernetes (EKS) cluster.
+  - Verify that all ArgoCD pods are running.
+2. Access ArgoCD
+  - Expose the ArgoCD Server (LoadBalancer/Ingress/Port Forward).
+  - Log in using the ArgoCD Admin credentials.
+3. Connect ArgoCD to GitHub
+  - ArgoCD → Settings → Repositories
+  - Add the GitHub Manifest Repository.
+  - Configure GitHub credentials (PAT or SSH Key).
+4. Create an ArgoCD Application
+  - ArgoCD → New Application
+  - Enter:
+    - Application Name
+    - GitHub Manifest Repository URL
+    - Repository Path
+    - Target Revision (main)
+    - Destination Cluster
+    - Namespace
+5. Configure Sync Policy
+  - Enable:
+    - Automatic Sync
+    - Self Heal
+    - Prune (Optional)
+6. Configure Jenkins Pipeline
+  - Build and push the Docker image to AWS ECR.
+  - Update the image tag in the Kubernetes manifest repository.
+  - Commit and push the manifest changes to GitHub.
+7. Automatic Deployment
+  - ArgoCD detects changes in the GitHub Manifest Repository.
+  - ArgoCD synchronizes the updated manifests.
+  - The application is automatically deployed to the Kubernetes (EKS) cluster.
+8. Verify Deployment
+  - Open the ArgoCD Dashboard.
+  - Verify the application status is Healthy and Synced.
+  - Verify the deployment:
+    kubectl get pods -n <namespace>
+    kubectl get svc -n <namespace>
