@@ -1,0 +1,14 @@
+AWS CLI Installation (Jenkins Agent)
+
+1. Update the Server
+
+sudo apt update
+sudo apt upgrade -y
+
+2. Install AWS CLI
+
+sudo apt install awscli -y
+
+3. Verify Installation
+
+aws --version
