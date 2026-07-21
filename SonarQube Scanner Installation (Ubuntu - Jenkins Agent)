@@ -1,55 +1,7 @@
 SonarQube Scanner Installation (Ubuntu - Jenkins Agent)
 
-1. Update the Server
+Just Install Plugin in Jenkins Agent
 
-sudo apt update
-sudo apt upgrade -y
-
-2. Install Java 17
-
-sudo apt install openjdk-17-jdk -y
-
-Verify Java
-
-java -version
-
-3. Download SonarScanner
-
-cd /opt
-
-sudo wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-7.3.0.5189-linux-x64.zip
-
-4. Install Unzip
-
-sudo apt install unzip -y
-
-5. Extract SonarScanner
-
-sudo unzip sonar-scanner-7.3.0.5189-linux-x64.zip
-
-6. Rename the Directory
-
-sudo mv sonar-scanner-7.3.0.5189-linux-x64 sonar-scanner
-
-7. Set Ownership
-
-sudo chown -R $USER:$USER /opt/sonar-scanner
-
-8. Add SonarScanner to PATH
-
-echo 'export PATH=$PATH:/opt/sonar-scanner/bin' >> ~/.bashrc
-
-source ~/.bashrc
-
-9. Verify Installation
-
-sonar-scanner --version
-
-Expected Output
-
-SonarScanner CLI 7.x.x
-Java 17
-Linux
 
 Important Notes
 
