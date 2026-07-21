@@ -92,3 +92,50 @@ Jenkins Agent
                  │
                  ▼
       Kubernetes / Amazon EKS
+
+
+========================================================================
+
+1. Create Infrastructure
+
+Create EC2-1 → Jenkins Controller (Master)
+- Create Linux user (if required)
+- Install Java
+- Install Jenkins
+- Install Jenkins Plugins
+  - Git Plugin
+  - Pipeline Plugin
+  - Docker Pipeline Plugin
+  - SonarQube Scanner Plugin
+  - AWS Credentials Plugin (Only if NOT using IAM Role)
+  - SSH Agent Plugin (Optional)
+
+------------------------------------------------------------
+
+Create EC2-2 → Jenkins Agent (Build Node)
+
+Install:
+- Java
+- Git
+- Docker
+- Trivy
+- AWS CLI
+- kubectl
+- Maven or Gradle (depending on the project)
+- SonarScanner CLI (only if Sonar analysis runs on the agent)
+
+Note:
+Install only the tools required to execute the pipeline on the agent.
+Do NOT install Jenkins or Jenkins plugins on the agent.
+
+------------------------------------------------------------
+
+Connect Jenkins Controller to Jenkins Agent
+
+- Create Linux user (for example: jenkins)
+- Configure SSH
+- Generate SSH Key
+- Copy Public Key to the Agent
+- Add SSH Credentials in Jenkins
+- Create Jenkins Node
+- Verify the agent is online.
