@@ -1,4 +1,4 @@
-SonarQube Server Installation (Ubuntu EC2)
+SonarQube Scanner Installation (Ubuntu - Jenkins Agent)
 
 1. Update the Server
 
@@ -13,126 +13,47 @@ Verify Java
 
 java -version
 
-3. Install PostgreSQL
-
-sudo apt install postgresql postgresql-contrib -y
-
-4. Create SonarQube Database and User
-
-sudo -i -u postgres
-
-psql
-
-CREATE DATABASE sonarqube;
-CREATE USER sonar WITH ENCRYPTED PASSWORD 'Sonar@123';
-GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;
-ALTER DATABASE sonarqube OWNER TO sonar;
-
-\q
-
-exit
-
-5. Download SonarQube
+3. Download SonarScanner
 
 cd /opt
 
-sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-25.7.0.110598.zip
+sudo wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-7.3.0.5189-linux-x64.zip
 
-6. Install Unzip
+4. Install Unzip
 
 sudo apt install unzip -y
 
-7. Extract SonarQube
+5. Extract SonarScanner
 
-sudo unzip sonarqube-25.7.0.110598.zip
+sudo unzip sonar-scanner-7.3.0.5189-linux-x64.zip
 
-sudo mv sonarqube-25.7.0.110598 sonarqube
+6. Rename the Directory
 
-8. Create SonarQube User
+sudo mv sonar-scanner-7.3.0.5189-linux-x64 sonar-scanner
 
-sudo useradd -r -M -d /opt/sonarqube -s /bin/bash sonar
+7. Set Ownership
 
-sudo chown -R sonar:sonar /opt/sonarqube
+sudo chown -R $USER:$USER /opt/sonar-scanner
 
-9. Configure Database Connection
+8. Add SonarScanner to PATH
 
-sudo nano /opt/sonarqube/conf/sonar.properties
+echo 'export PATH=$PATH:/opt/sonar-scanner/bin' >> ~/.bashrc
 
-Update the following values:
+source ~/.bashrc
 
-sonar.jdbc.username=sonar
-sonar.jdbc.password=Sonar@123
-sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+9. Verify Installation
 
-10. Configure Linux Kernel Settings
+sonar-scanner --version
 
-echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
-echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
+Expected Output
 
-sudo sysctl -p
+SonarScanner CLI 7.x.x
+Java 17
+Linux
 
-sudo nano /etc/security/limits.conf
+Important Notes
 
-Add the following lines:
-
-sonar - nofile 131072
-sonar - nproc 8192
-
-11. Create SonarQube Service
-
-sudo nano /etc/systemd/system/sonarqube.service
-
-Paste the following:
-
-[Unit]
-Description=SonarQube Service
-After=network.target postgresql.service
-
-[Service]
-Type=forking
-User=sonar
-Group=sonar
-ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
-ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
-Restart=always
-LimitNOFILE=131072
-LimitNPROC=8192
-
-[Install]
-WantedBy=multi-user.target
-
-12. Reload Systemd
-
-sudo systemctl daemon-reload
-
-13. Enable SonarQube
-
-sudo systemctl enable sonarqube
-
-14. Start SonarQube
-
-sudo systemctl start sonarqube
-
-15. Check Status
-
-sudo systemctl status sonarqube
-
-16. Check Logs (if required)
-
-sudo tail -f /opt/sonarqube/logs/sonar.log
-
-17. Access SonarQube
-
-http://<EC2-Public-IP>:9000
-
-Default Login
-
-Username: admin
-Password: admin
-
-Change the password after the first login.
-
-Note:
-- Install SonarQube Server only on this EC2 instance.
-- Install SonarQube Scanner only on the Jenkins Agent.
-- Open port 9000 in the EC2 Security Group.
+- Install SonarScanner only on the Jenkins Agent (Build Node).
+- Do NOT install SonarQube Server on the Jenkins Agent.
+- The Jenkins pipeline uses SonarScanner to analyze the source code.
+- SonarScanner sends the analysis report to the SonarQube Server running on http://<SonarQube-Server-IP>:9000.
