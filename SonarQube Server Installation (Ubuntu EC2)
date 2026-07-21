@@ -1,0 +1,138 @@
+SonarQube Server Installation (Ubuntu EC2)
+
+1. Update the Server
+
+sudo apt update
+sudo apt upgrade -y
+
+2. Install Java 17
+
+sudo apt install openjdk-17-jdk -y
+
+Verify Java
+
+java -version
+
+3. Install PostgreSQL
+
+sudo apt install postgresql postgresql-contrib -y
+
+4. Create SonarQube Database and User
+
+sudo -i -u postgres
+
+psql
+
+CREATE DATABASE sonarqube;
+CREATE USER sonar WITH ENCRYPTED PASSWORD 'Sonar@123';
+GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;
+ALTER DATABASE sonarqube OWNER TO sonar;
+
+\q
+
+exit
+
+5. Download SonarQube
+
+cd /opt
+
+sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-25.7.0.110598.zip
+
+6. Install Unzip
+
+sudo apt install unzip -y
+
+7. Extract SonarQube
+
+sudo unzip sonarqube-25.7.0.110598.zip
+
+sudo mv sonarqube-25.7.0.110598 sonarqube
+
+8. Create SonarQube User
+
+sudo useradd -r -M -d /opt/sonarqube -s /bin/bash sonar
+
+sudo chown -R sonar:sonar /opt/sonarqube
+
+9. Configure Database Connection
+
+sudo nano /opt/sonarqube/conf/sonar.properties
+
+Update the following values:
+
+sonar.jdbc.username=sonar
+sonar.jdbc.password=Sonar@123
+sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+
+10. Configure Linux Kernel Settings
+
+echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
+echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
+
+sudo sysctl -p
+
+sudo nano /etc/security/limits.conf
+
+Add the following lines:
+
+sonar - nofile 131072
+sonar - nproc 8192
+
+11. Create SonarQube Service
+
+sudo nano /etc/systemd/system/sonarqube.service
+
+Paste the following:
+
+[Unit]
+Description=SonarQube Service
+After=network.target postgresql.service
+
+[Service]
+Type=forking
+User=sonar
+Group=sonar
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+Restart=always
+LimitNOFILE=131072
+LimitNPROC=8192
+
+[Install]
+WantedBy=multi-user.target
+
+12. Reload Systemd
+
+sudo systemctl daemon-reload
+
+13. Enable SonarQube
+
+sudo systemctl enable sonarqube
+
+14. Start SonarQube
+
+sudo systemctl start sonarqube
+
+15. Check Status
+
+sudo systemctl status sonarqube
+
+16. Check Logs (if required)
+
+sudo tail -f /opt/sonarqube/logs/sonar.log
+
+17. Access SonarQube
+
+http://<EC2-Public-IP>:9000
+
+Default Login
+
+Username: admin
+Password: admin
+
+Change the password after the first login.
+
+Note:
+- Install SonarQube Server only on this EC2 instance.
+- Install SonarQube Scanner only on the Jenkins Agent.
+- Open port 9000 in the EC2 Security Group.
