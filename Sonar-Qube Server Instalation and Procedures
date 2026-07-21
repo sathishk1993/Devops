@@ -1,6 +1,8 @@
 EC2-3 (SonarQube Server - Ubuntu)
 
 1. Update the Server
+apt update = Refresh the package list
+apt upgrade = Install available updates
 
 sudo apt update
 sudo apt upgrade -y
