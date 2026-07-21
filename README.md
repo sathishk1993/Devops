@@ -38,6 +38,15 @@ To establish a connection from Jenkins Master to Agent Node
 8. Launch method -> Launch agents via ssh -> copy the private IP of the agent instance.
 9. Choose the credentials which we stored in credentials (see the step3 in Master)
 10. Host Key verification>for testing you can use Non verifying verification strategy.
+11. Verify SSH connectivity from Jenkins Controller to Agent:
+
+Command:
+ssh <username>@<Agent-Private-IP>
+
+Example:
+ssh agent@10.0.0.5
+
+Successful login without a password confirms the Controller can communicate with the Agent.
 
 ================================================================================================================
 
