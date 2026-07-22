@@ -204,7 +204,7 @@ AWS automatically creates the Trust Policy:
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Effect": "Allow",
+      Effect": "Allow",
       "Principal": {
         "AWS": "arn:aws:iam::<Source-Account-ID>:root"
       },
@@ -212,7 +212,6 @@ AWS automatically creates the Trust Policy:
     }
   ]
 }
-
 Example:
 
 Source Account (111111111111)
@@ -229,4 +228,70 @@ CrossAccountS3Role
 
 Interview Answer:
 For cross-account access, create an IAM Role in the target account, choose "AWS Account" as the trusted entity, specify the source AWS Account ID, attach the required managed policy, and AWS STS issues temporary credentials using AssumeRole.
+
+=====================================================AmazonEC2ContainerRegistryPowerUser===========================================
+
+IAM Policy: AmazonEC2ContainerRegistryPowerUser
+
+Purpose:
+Attach this policy to the EC2 IAM Role used by the Jenkins Agent. It allows Jenkins to authenticate with Amazon ECR and push/pull Docker images.
+
+Jenkins Pipeline Flow:
+1. Git Clone
+2. Maven Build
+3. docker build
+4. docker tag
+5. aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-south-1.amazonaws.com
+6. docker push <account-id>.dkr.ecr.ap-south-1.amazonaws.com/myapp:latest
+7. Deploy to EKS
+
+Key Points:
+- AmazonEC2ContainerRegistryPowerUser allows Jenkins to:
+  • Authenticate with ECR
+  • Push Docker images
+  • Pull Docker images
+  • Upload image layers
+  • Download image layers
+
+- The IAM Role provides AWS permissions.
+- The command `aws ecr get-login-password` generates a temporary ECR authentication token using the IAM Role.
+- `docker login --username AWS --password-stdin` authenticates the Docker Engine with ECR.
+- `--username AWS` is a fixed value required by Amazon ECR. It is NOT your Docker Hub username or IAM username.
+
+Interview Answer:
+"We attach the AmazonEC2ContainerRegistryPowerUser policy to the Jenkins EC2 instance so that Jenkins can authenticate with Amazon ECR and push/pull Docker images. The IAM role provides AWS permissions, and the `aws ecr get-login-password | docker login` command authenticates the Docker client to the ECR registry before pushing or pulling images."
+
+
+=========================================================================== IAM Policy: AmazonEKSClusterPolicy================================
+
+
+IAM Policy: AmazonEKSClusterPolicy (commonly used for learning/lab environments; in production Jenkins often uses a custom least-privilege policy)
+
+Purpose:
+Allows Jenkins to connect to and manage an Amazon EKS cluster.
+
+Jenkins Pipeline Flow:
+1. Configure kubectl to connect to the EKS cluster
+2. Verify cluster connectivity
+3. Deploy Kubernetes manifests
+4. Verify deployment
+
+Commands:
+
+# Configure kubeconfig
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+
+# Verify connection
+kubectl get nodes
+
+# Deploy application
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+# Verify deployment
+kubectl get pods
+kubectl get svc
+
+Interview Answer:
+"We attach an IAM role with the required EKS permissions to the Jenkins agent. During the pipeline, Jenkins uses 'aws eks update-kubeconfig' to configure kubectl for the target EKS cluster, then deploys the application using 'kubectl apply -f'. Finally, it verifies the deployment using 'kubectl get pods' and 'kubectl get svc'."
 
