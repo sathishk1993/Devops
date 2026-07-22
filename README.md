@@ -123,3 +123,110 @@ IAM → Roles → Select Role → Add Permissions → Create Inline Policy
 
 Managed Policy: A reusable IAM policy created under IAM → Policies that can be attached to multiple users, groups, or roles.
 Inline Policy: A policy created directly inside a specific IAM user, group, or role that cannot be shared with others.
+
+
+============================================= IAM ROLE WITH TEMPORARY CREDENTIALS====================================================
+
+
+Create an IAM Role with sts:AssumeRole (EC2 Example)
+
+1. Open AWS Console.
+2. Go to IAM.
+3. Click Roles.
+4. Click Create role.
+5. Select AWS Service.
+6. Choose EC2.
+7. Click Next.
+
+Note:
+AWS automatically creates the Trust Policy with:
+
+* Principal: ec2.amazonaws.com
+* Action: sts:AssumeRole
+
+8. Attach the required permissions policy (AWS Managed or Customer Managed), for example:
+
+   * AmazonS3ReadOnlyAccess
+   * AmazonEC2ReadOnlyAccess
+   * Your own custom managed policy
+
+9. Click Next.
+
+10. Enter the Role Name (Example: JenkinsEC2Role).
+
+11. Click Create role.
+
+Result:
+
+* Trust Policy → Defines who can assume the role (EC2).
+* Permissions Policy → Defines what the role can do (S3, EC2, ECR, etc.).
+* When an EC2 instance is launched with this role, AWS STS automatically assumes the role and provides temporary credentials.
+
+Trust Policy Example
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+Interview One-Liner:
+
+Create an IAM Role, choose the AWS service (for example, EC2), AWS automatically creates the `sts:AssumeRole` trust policy, then attach the required permissions policy to define what the role can access.
+
+
+========================================================CROSS ACCOUNT POLICY======================================================
+
+Cross Account IAM Role Creation
+
+1. Login to the Target AWS Account (the account containing the resource).
+2. Go to IAM → Roles.
+3. Click Create Role.
+4. Under Trusted Entity Type, select AWS Account.
+5. Enter the Source AWS Account ID (the account that needs access).
+6. Click Next.
+7. Attach the required Managed Policy (AWS Managed or Customer Managed), such as AmazonS3ReadOnlyAccess or a custom policy.
+8. Enter the Role Name (Example: CrossAccountS3Role).
+9. Click Create Role.
+
+AWS automatically creates the Trust Policy:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<Source-Account-ID>:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+
+Example:
+
+Source Account (111111111111)
+        │
+        │ AssumeRole
+        ▼
+Target Account (222222222222)
+        │
+        ▼
+CrossAccountS3Role
+        │
+        ├── Trust Policy → Allows Account 111111111111
+        └── Managed Policy → AmazonS3ReadOnlyAccess
+
+Interview Answer:
+For cross-account access, create an IAM Role in the target account, choose "AWS Account" as the trusted entity, specify the source AWS Account ID, attach the required managed policy, and AWS STS issues temporary credentials using AssumeRole.
+
