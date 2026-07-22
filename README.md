@@ -50,32 +50,32 @@ Successful login without a password confirms the Controller can communicate with
 
 =============================================== MANAGED & INLINE POLICY  =================================================================
 
-
-
 Managed Policy
 
-1. Go to AWS Console.
-2. Open IAM.
-3. Click Policies.
-4. Click Create policy.
-5. Select the JSON tab.
-6. Paste the policy JSON.
-7. Click Next.
-8. Enter the policy name (Example: S3AccessPolicy).
-9. Click Create policy.
-10. Go to IAM → Roles.
-11. Select your role (Example: JenkinsEC2Role).
-12. Click Add permissions.
-13. Click Attach policies.
-14. Search for S3AccessPolicy.
-15. Select it and click Add permissions.
+Managed Policy = A standalone IAM policy that is created separately under IAM → Policies and then attached to one or more Users, Groups, or Roles.
 
-Result:
+Flow:
 
-* The policy is stored under IAM → Policies.
-* The same policy can be attached to multiple roles, users, or groups.
+IAM
+ │
+ ├── Policies
+ │      │
+ │      ├── Create Policy
+ │      └── Attach to
+ │             ├── User
+ │             ├── Group
+ │             └── Role
 
----
+Examples:
+• Create a policy with S3 Read access.
+• Attach it to a User.
+• Attach the same policy to a Group.
+• Attach the same policy to an IAM Role.
+
+Golden Rule:
+Managed Policy = Create Once → Reuse Many Times.
+Inline Policy = Create Inside One User/Group/Role → Cannot Be Reused.
+
 
 Inline Policy
 
