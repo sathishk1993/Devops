@@ -48,6 +48,78 @@ ssh agent@10.0.0.5
 
 Successful login without a password confirms the Controller can communicate with the Agent.
 
-================================================================================================================
+=============================================== MANAGED & INLINE POLICY  =================================================================
 
 
+
+Managed Policy
+
+1. Go to AWS Console.
+2. Open IAM.
+3. Click Policies.
+4. Click Create policy.
+5. Select the JSON tab.
+6. Paste the policy JSON.
+7. Click Next.
+8. Enter the policy name (Example: S3AccessPolicy).
+9. Click Create policy.
+10. Go to IAM → Roles.
+11. Select your role (Example: JenkinsEC2Role).
+12. Click Add permissions.
+13. Click Attach policies.
+14. Search for S3AccessPolicy.
+15. Select it and click Add permissions.
+
+Result:
+
+* The policy is stored under IAM → Policies.
+* The same policy can be attached to multiple roles, users, or groups.
+
+---
+
+Inline Policy
+
+1. Go to AWS Console.
+2. Open IAM.
+3. Click Roles.
+4. Select your role (Example: JenkinsEC2Role).
+5. Open the Permissions tab.
+6. Click Add permissions.
+7. Click Create inline policy.
+8. Select the JSON tab.
+9. Paste the policy JSON.
+10. Click Next.
+11. Enter the policy name (Example: JenkinsS3InlinePolicy).
+12. Click Create policy.
+
+Result:
+
+* The policy is stored inside JenkinsEC2Role.
+* It cannot be attached to any other role.
+
+Example Policy JSON (used for both Managed and Inline)
+
+{
+"Version": "2012-10-17",
+"Statement": [
+{
+"Effect": "Allow",
+"Action": [
+"s3",
+"s3"
+],
+"Resource": "arn:aws:s3:::my-bucket/*"
+}
+]
+}
+
+Golden Rule
+
+Managed Policy:
+IAM → Policies → Create Policy → Attach to Role
+
+Inline Policy:
+IAM → Roles → Select Role → Add Permissions → Create Inline Policy
+
+Managed Policy: A reusable IAM policy created under IAM → Policies that can be attached to multiple users, groups, or roles.
+Inline Policy: A policy created directly inside a specific IAM user, group, or role that cannot be shared with others.
