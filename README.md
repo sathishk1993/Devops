@@ -295,3 +295,87 @@ kubectl get svc
 Interview Answer:
 "We attach an IAM role with the required EKS permissions to the Jenkins agent. During the pipeline, Jenkins uses 'aws eks update-kubeconfig' to configure kubectl for the target EKS cluster, then deploys the application using 'kubectl apply -f'. Finally, it verifies the deployment using 'kubectl get pods' and 'kubectl get svc'."
 
+================================================================================================================================================================
+
+Grant Jenkins IAM Role Access to Amazon EKS (Production Flow)
+
+Prerequisites:
+- Jenkins EC2/Agent has an IAM Role attached.
+- IAM Role has:
+  - AmazonEC2ContainerRegistryPowerUser
+  - AmazonEKSClusterPolicy (or a custom policy with the required EKS permissions)
+- EKS cluster is already created.
+
+Step 1: Create an EKS Access Entry (Recommended for newer EKS clusters)
+
+AWS Console:
+Amazon EKS → Clusters → <cluster-name> → Access → Create Access Entry
+
+Principal:
+Select the Jenkins EC2 IAM Role
+
+Type:
+Standard
+
+Step 2: Associate an Access Policy
+
+Attach one of the following:
+
+For Learning/Lab:
+AmazonEKSClusterAdminPolicy
+
+For Production:
+Create a custom Kubernetes RBAC role with only the required permissions (least privilege).
+
+Step 3: Connect Jenkins to EKS
+
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+
+Verify:
+
+kubectl get nodes
+
+Step 4: Deploy Kubernetes Manifests
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+Verify Deployment
+
+kubectl get pods
+kubectl get svc
+
+Real-Time Flow
+
+Jenkins
+   │
+   ▼
+IAM Role
+   │
+   ▼
+Amazon EKS Access Entry
+   │
+   ▼
+Access Policy / Kubernetes RBAC
+   │
+   ▼
+aws eks update-kubeconfig
+   │
+   ▼
+kubectl apply -f deployment.yaml
+   │
+   ▼
+Application Deployed
+
+Interview Answer:
+
+1. Attach the required IAM policy to the Jenkins EC2 IAM Role.
+2. Create an EKS Access Entry for the Jenkins IAM Role.
+3. Associate an EKS access policy (or use Kubernetes RBAC for least privilege).
+4. Run:
+   aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+5. Deploy the application using:
+   kubectl apply -f deployment.yaml
+6. Verify using:
+   kubectl get pods
+   kubectl get svc
