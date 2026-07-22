@@ -296,76 +296,141 @@ Interview Answer:
 "We attach an IAM role with the required EKS permissions to the Jenkins agent. During the pipeline, Jenkins uses 'aws eks update-kubeconfig' to configure kubectl for the target EKS cluster, then deploys the application using 'kubectl apply -f'. Finally, it verifies the deployment using 'kubectl get pods' and 'kubectl get svc'."
 
 ================================================================================================================================================================
-
-Grant Jenkins IAM Role Access to Amazon EKS (Production Flow)
+Jenkins → EKS Deployment Setup
 
 Prerequisites:
+- Jenkins is installed.
+- Jenkins Agent has Docker, AWS CLI, and kubectl installed.
+- EKS cluster is running.
+- ECR repository exists.
 - Jenkins EC2/Agent has an IAM Role attached.
-- IAM Role has:
-  - AmazonEC2ContainerRegistryPowerUser
-  - AmazonEKSClusterPolicy (or a custom policy with the required EKS permissions)
-- EKS cluster is already created.
 
-Step 1: Create an EKS Access Entry (Recommended for newer EKS clusters)
+------------------------------------------------------------
+Step 1: Attach IAM Policies to the Jenkins IAM Role
+------------------------------------------------------------
 
-AWS Console:
-Amazon EKS → Clusters → <cluster-name> → Access → Create Access Entry
+Required AWS permissions:
+- AmazonEC2ContainerRegistryPowerUser (or a custom ECR policy)
+- AmazonEKSClusterPolicy (or a custom policy including eks:DescribeCluster)
+
+Verify:
+
+aws sts get-caller-identity
+
+------------------------------------------------------------
+Step 2: Create an EKS Access Entry
+------------------------------------------------------------
+
+AWS Console
+
+Amazon EKS
+→ Clusters
+→ <cluster-name>
+→ Access
+→ Create Access Entry
 
 Principal:
-Select the Jenkins EC2 IAM Role
+Select the Jenkins IAM Role
 
 Type:
 Standard
 
-Step 2: Associate an Access Policy
+------------------------------------------------------------
+Step 3: Configure Kubernetes Authorization
+------------------------------------------------------------
 
-Attach one of the following:
-
-For Learning/Lab:
+Option A (Learning/Lab)
+Associate:
 AmazonEKSClusterAdminPolicy
 
-For Production:
-Create a custom Kubernetes RBAC role with only the required permissions (least privilege).
+OR
 
-Step 3: Connect Jenkins to EKS
+Option B (Production - Recommended)
+Create:
+- Role or ClusterRole
+- RoleBinding or ClusterRoleBinding
 
-aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+Grant only the required permissions (Deployments, Services, Pods, etc.).
+
+------------------------------------------------------------
+Step 4: Connect Jenkins to EKS
+------------------------------------------------------------
+
+aws eks update-kubeconfig \
+--region ap-south-1 \
+--name my-eks-cluster
 
 Verify:
 
 kubectl get nodes
 
-Step 4: Deploy Kubernetes Manifests
+------------------------------------------------------------
+Step 5: Configure Jenkins Pipeline
+------------------------------------------------------------
+
+Pipeline stages:
+
+1. Checkout code from GitHub
+2. Build Docker image
+3. Push image to ECR
+4. Update kubeconfig
+5. Deploy manifests
+
+Commands:
+
+docker build -t myapp .
+
+aws ecr get-login-password \
+| docker login --username AWS --password-stdin <ECR_URL>
+
+docker push <ECR_URL>/myapp:latest
+
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
 
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 
-Verify Deployment
+------------------------------------------------------------
+Step 6: Verify Deployment
+------------------------------------------------------------
+
+kubectl get deployments
 
 kubectl get pods
+
 kubectl get svc
 
-Real-Time Flow
+kubectl describe pod <pod-name>
 
-Jenkins
+------------------------------------------------------------
+Production Flow
+------------------------------------------------------------
+
+GitHub
    │
    ▼
-IAM Role
+Jenkins Pipeline
    │
    ▼
-Amazon EKS Access Entry
+Build Docker Image
    │
    ▼
-Access Policy / Kubernetes RBAC
+Push Image to Amazon ECR
    │
    ▼
 aws eks update-kubeconfig
    │
    ▼
+EKS Access Entry Authentication
+   │
+   ▼
+Kubernetes RBAC Authorization
+   │
+   ▼
 kubectl apply -f deployment.yaml
    │
    ▼
-Application Deployed
+Pods Created in Amazon EKS
 
 Interview Answer:
 
