@@ -262,7 +262,7 @@ Interview Answer:
 "We attach the AmazonEC2ContainerRegistryPowerUser policy to the Jenkins EC2 instance so that Jenkins can authenticate with Amazon ECR and push/pull Docker images. The IAM role provides AWS permissions, and the `aws ecr get-login-password | docker login` command authenticates the Docker client to the ECR registry before pushing or pulling images."
 
 
-=========================================================================== IAM Policy: AmazonEKSClusterPolicy================================
+===========================================================================JENKINS AGENT IAM Policy: AmazonEKSClusterPolicy================================
 
 
 IAM Policy: AmazonEKSClusterPolicy (commonly used for learning/lab environments; in production Jenkins often uses a custom least-privilege policy)
@@ -335,7 +335,7 @@ Standard
 
 ------------------------------------------------------------
 Step 3: Configure Kubernetes Authorization (In case if we have assigned AmazonEKSClusterAdminPolicy Policy
-to Jenkins No need of RBAC,Role,Role+Binding, No kubernetes access)
+to Jenkins AGENT No need of RBAC,Role,Role+Binding, No kubernetes access)
 ------------------------------------------------------------
 
 Option A (Learning/Lab)
@@ -410,7 +410,7 @@ Example of the flow:
 GitHub -> Jenkins downloads YAML files -> Jenkins uses IAM Role -> arn:aws:iam::123456789012:role/JenkinsRole -> AWS authenticates the IAM Role
 EKS passes this identity to Kubernetes -> Kubernetes checks RoleBinding -> RoleBinding finds the matching IAM Role ARN -> RoleBinding gives access to the Role
 
-=============================================== JENKINS IAM, ROLE, RBAC Jenkins flow ====================================================
+=============================================== JENKINS AGENT IAM, ROLE, RBAC Jenkins flow ====================================================
 
 # Role: Jenkins Deployer
 # Namespace: dev
