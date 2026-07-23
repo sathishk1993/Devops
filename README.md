@@ -480,3 +480,103 @@ Example: Jenkins IAM Role, developer user, service account
 IAM Role ARN is only referenced in RoleBinding
 The Role never contains the IAM ARN.
 There is no synchronization between AWS IAM and Kubernetes. During every request, EKS authenticates the IAM Role, and Kubernetes uses the RoleBinding to match that identity and apply the required permissions.
+
+===========================================================================================================================================================
+
+GitHub
+   │
+   ▼
+Jenkins (EC2)
+   │
+   ▼
+IAM Role
+   │
+   ▼
+EKS Access Entry
+   │
+   ▼
+Kubernetes User/Group
+   │
+   ▼
+RoleBinding / ClusterRoleBinding
+   │
+   ▼
+Role / ClusterRole
+   │
+   ▼
+kubectl apply
+   │
+   ▼
+Amazon EKS
+ 
+Why is this architecture popular?
+ 
+- Jenkins is easy to manage independently.
+- If the Kubernetes cluster has issues, Jenkins is still available.
+- Jenkins can deploy to multiple EKS clusters (Development, QA, UAT, Production).
+- Upgrading the EKS cluster does not affect Jenkins.
+- Jenkins runs outside the Kubernetes cluster, so no Kubernetes ServiceAccount is required.
+ 
+Do all companies use this?
+ 
+No. The most common deployment patterns are:
+ 
+Pattern 1: Jenkins on EC2 (Very Common)
+ 
+GitHub
+   │
+   ▼
+Jenkins (EC2)
+   │
+   ▼
+IAM Role
+   │
+   ▼
+EKS Access Entry
+   │
+   ▼
+Kubernetes RBAC
+   │
+   ▼
+Amazon EKS
+ 
+Uses:
+- IAM Role
+- EKS Access Entry
+- Kubernetes RBAC
+- No ServiceAccount for Jenkins
+ 
+Pattern 2: Jenkins Inside Amazon EKS
+ 
+GitHub
+   │
+   ▼
+Jenkins Pod
+   │
+   ▼
+ServiceAccount
+   │
+   ├── Kubernetes RBAC
+   │
+   └── IAM Role (IRSA) (if AWS access is required)
+   │
+   ▼
+Amazon EKS
+ 
+Uses:
+- ServiceAccount
+- Role/ClusterRole
+- RoleBinding/ClusterRoleBinding
+- IAM Role (IRSA) for AWS access
+ 
+Pattern 3: GitHub Actions / GitLab CI / Azure DevOps (Modern CI/CD)
+ 
+GitHub Actions / GitLab CI / Azure DevOps
+                 │
+                 ▼
+IAM Role (OIDC)
+                 │
+                 ▼
+Amazon EKS
+ 
+Many companies are moving to this model because they no longer need to maintain Jenkins servers while still securely deploying applications to Amazon EKS.
