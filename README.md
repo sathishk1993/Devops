@@ -444,3 +444,39 @@ Interview Answer:
 6. Verify using:
    kubectl get pods
    kubectl get svc
+
+The complete Jenkins deployment flow is:
+GitHub
+  |
+  v
+Jenkins downloads YAML files
+  |
+  v
+Jenkins uses IAM Role
+arn:aws:iam::123456789012:role/JenkinsRole
+  |
+  v
+AWS authenticates the IAM Role
+  |
+  v
+EKS passes this identity to Kubernetes
+  |
+  v
+Kubernetes checks RoleBinding
+  |
+  v
+RoleBinding finds the matching IAM Role ARN
+  |
+  v
+RoleBinding gives access to the Role
+  |
+  v
+Role permissions decide what Jenkins can do
+Remember:
+Role = What actions are allowed
+Example: create deployment, delete pod, update service
+RoleBinding = Who gets those permissions
+Example: Jenkins IAM Role, developer user, service account
+IAM Role ARN is only referenced in RoleBinding
+The Role never contains the IAM ARN.
+There is no synchronization between AWS IAM and Kubernetes. During every request, EKS authenticates the IAM Role, and Kubernetes uses the RoleBinding to match that identity and apply the required permissions.
