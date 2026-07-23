@@ -410,11 +410,10 @@ Example of the flow:
 GitHub -> Jenkins downloads YAML files -> Jenkins uses IAM Role -> arn:aws:iam::123456789012:role/JenkinsRole -> AWS authenticates the IAM Role
 EKS passes this identity to Kubernetes -> Kubernetes checks RoleBinding -> RoleBinding finds the matching IAM Role ARN -> RoleBinding gives access to the Role
 
-=============================================== IAM, ROLE, RBAC Jenkins flow ====================================================
+=============================================== JENKINS IAM, ROLE, RBAC Jenkins flow ====================================================
 
 # Role: Jenkins Deployer
 # Namespace: dev
-
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -423,7 +422,6 @@ metadata:
   namespace: dev
 
 rules:
-
 # Core API Resources
 - apiGroups: [""]
   resources:
