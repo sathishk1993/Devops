@@ -295,8 +295,8 @@ kubectl get svc
 Interview Answer:
 "We attach an IAM role with the required EKS permissions to the Jenkins agent. During the pipeline, Jenkins uses 'aws eks update-kubeconfig' to configure kubectl for the target EKS cluster, then deploys the application using 'kubectl apply -f'. Finally, it verifies the deployment using 'kubectl get pods' and 'kubectl get svc'."
 
-================================================================================================================================================================
-Jenkins → EKS Deployment Setup
+====================Jenkins → EKS Deployment Setup without RBAC========================================================================================
+
 
 Prerequisites:
 - Jenkins is installed.
@@ -313,9 +313,7 @@ Required AWS permissions:
 - AmazonEC2ContainerRegistryPowerUser (or a custom ECR policy)
 - AmazonEKSClusterPolicy (or a custom policy including eks:DescribeCluster)
 
-Verify:
-
-aws sts get-caller-identity
+Verify: aws sts get-caller-identity
 
 ------------------------------------------------------------
 Step 2: Create an EKS Access Entry
@@ -336,21 +334,13 @@ Type:
 Standard
 
 ------------------------------------------------------------
-Step 3: Configure Kubernetes Authorization
+Step 3: Configure Kubernetes Authorization (In case if we have assigned AmazonEKSClusterAdminPolicy Policy
+to Jenkins No need of RBAC,Role,Role+Binding, No kubernetes access)
 ------------------------------------------------------------
 
 Option A (Learning/Lab)
 Associate:
 AmazonEKSClusterAdminPolicy
-
-OR
-
-Option B (Production - Recommended)
-Create:
-- Role or ClusterRole
-- RoleBinding or ClusterRoleBinding
-
-Grant only the required permissions (Deployments, Services, Pods, etc.).
 
 ------------------------------------------------------------
 Step 4: Connect Jenkins to EKS
@@ -360,9 +350,7 @@ aws eks update-kubeconfig \
 --region ap-south-1 \
 --name my-eks-cluster
 
-Verify:
-
-kubectl get nodes
+Verify:  kubectl get nodes
 
 ------------------------------------------------------------
 Step 5: Configure Jenkins Pipeline
@@ -393,44 +381,16 @@ kubectl apply -f service.yaml
 ------------------------------------------------------------
 Step 6: Verify Deployment
 ------------------------------------------------------------
-
 kubectl get deployments
-
 kubectl get pods
-
 kubectl get svc
-
 kubectl describe pod <pod-name>
 
 ------------------------------------------------------------
 Production Flow
 ------------------------------------------------------------
 
-GitHub
-   │
-   ▼
-Jenkins Pipeline
-   │
-   ▼
-Build Docker Image
-   │
-   ▼
-Push Image to Amazon ECR
-   │
-   ▼
-aws eks update-kubeconfig
-   │
-   ▼
-EKS Access Entry Authentication
-   │
-   ▼
-Kubernetes RBAC Authorization
-   │
-   ▼
-kubectl apply -f deployment.yaml
-   │
-   ▼
-Pods Created in Amazon EKS
+GitHub -> Jenkins Pipeline -> Build Docker Image -> Push Image to Amazon ECR -> aws eks update-kubeconfig -> EKS Access Entry Authentication -> Kubernetes RBAC Authorization -> kubectl apply -f deployment.yaml -> Pods Created in Amazon EKS
 
 Interview Answer:
 
@@ -445,32 +405,111 @@ Interview Answer:
    kubectl get pods
    kubectl get svc
 
-The complete Jenkins deployment flow is:
-GitHub
-  |
-  v
-Jenkins downloads YAML files
-  |
-  v
-Jenkins uses IAM Role
-arn:aws:iam::123456789012:role/JenkinsRole
-  |
-  v
-AWS authenticates the IAM Role
-  |
-  v
-EKS passes this identity to Kubernetes
-  |
-  v
-Kubernetes checks RoleBinding
-  |
-  v
-RoleBinding finds the matching IAM Role ARN
-  |
-  v
-RoleBinding gives access to the Role
-  |
-  v
+
+Example of the flow:
+GitHub -> Jenkins downloads YAML files -> Jenkins uses IAM Role -> arn:aws:iam::123456789012:role/JenkinsRole -> AWS authenticates the IAM Role
+EKS passes this identity to Kubernetes -> Kubernetes checks RoleBinding -> RoleBinding finds the matching IAM Role ARN -> RoleBinding gives access to the Role
+
+=============================================== IAM, ROLE, RBAC Jenkins flow ====================================================
+
+# Role: Jenkins Deployer
+# Namespace: dev
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-deployer
+  namespace: dev
+
+rules:
+
+# Core API Resources
+- apiGroups: [""]
+  resources:
+    - pods
+    - pods/log
+    - services
+    - endpoints
+    - configmaps
+    - secrets
+    - serviceaccounts
+    - persistentvolumeclaims
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+
+# Workload Resources
+- apiGroups: ["apps"]
+  resources:
+    - deployments
+    - replicasets
+    - statefulsets
+    - daemonsets
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+
+# Batch Resources
+- apiGroups: ["batch"]
+  resources:
+    - jobs
+    - cronjobs
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+
+# Networking Resources
+- apiGroups: ["networking.k8s.io"]
+  resources:
+    - ingresses
+    - networkpolicies
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+
+# RoleBinding
+# Namespace: dev
+# ============================================================
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-deployer-binding
+  namespace: dev
+
+subjects:
+- kind: Group
+  name: jenkins-deployers
+  apiGroup: rbac.authorization.k8s.io
+
+roleRef:
+  kind: Role
+  name: jenkins-deployer
+  apiGroup: rbac.authorization.k8s.io
+
+
+Just to understand the concept:  
 Role permissions decide what Jenkins can do
 Remember:
 Role = What actions are allowed
@@ -481,34 +520,7 @@ IAM Role ARN is only referenced in RoleBinding
 The Role never contains the IAM ARN.
 There is no synchronization between AWS IAM and Kubernetes. During every request, EKS authenticates the IAM Role, and Kubernetes uses the RoleBinding to match that identity and apply the required permissions.
 
-===========================================================================================================================================================
-
-GitHub
-   │
-   ▼
-Jenkins (EC2)
-   │
-   ▼
-IAM Role
-   │
-   ▼
-EKS Access Entry
-   │
-   ▼
-Kubernetes User/Group
-   │
-   ▼
-RoleBinding / ClusterRoleBinding
-   │
-   ▼
-Role / ClusterRole
-   │
-   ▼
-kubectl apply
-   │
-   ▼
-Amazon EKS
- 
+================================================JENKINS PIPLEINE PATTERNS==========================================================================================
 Why is this architecture popular?
  
 - Jenkins is easy to manage independently.
