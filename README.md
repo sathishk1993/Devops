@@ -590,3 +590,6 @@ IAM Role (OIDC)
 Amazon EKS
  
 Many companies are moving to this model because they no longer need to maintain Jenkins servers while still securely deploying applications to Amazon EKS.
+
+
+Note: An IAM principal is an AWS identity that can authenticate and make requests to AWS resources. IAM Users, IAM Roles, and AWS services are principals, whereas IAM Groups are not because they cannot authenticate or make API calls; therefore, an IAM Group ARN cannot be used wherever AWS expects a principal (such as EKS Access Entries or trust policies).
