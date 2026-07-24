@@ -5,20 +5,49 @@ metadata:
   namespace: dev
   labels:
     app: bankingapp
+
 spec:
   replicas: 3
+
   selector:
     matchLabels:
       app: bankingapp
+
   template:
     metadata:
       labels:
         app: bankingapp
+
     spec:
       containers:
       - name: bankingapp
         image: loksaieta/bankingwebapp:latest
         imagePullPolicy: IfNotPresent
+
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: bankingapp-config
+              key: APP_NAME
+
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: bankingapp-config
+              key: ENVIRONMENT
+
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bankingapp-secret
+              key: DB_USERNAME
+
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bankingapp-secret
+              key: DB_PASSWORD
 
         ports:
         - containerPort: 8082
