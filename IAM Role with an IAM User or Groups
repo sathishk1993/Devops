@@ -1,0 +1,43 @@
+Using an IAM Role with an IAM User/Group
+
+1. Create an IAM Role (Example: jenkins-deployer).
+
+2. Attach the required permission policies to the role, such as:
+   - AmazonEC2ContainerRegistryPowerUser
+   - Custom EKS Policy
+
+3. If the role is for an EC2 instance (for example, Jenkins Agent), attach the IAM Role directly to the EC2 instance. The EC2 instance automatically receives all permissions attached to the role.
+
+4. If an IAM User or IAM Group also needs the same permissions, do NOT attach the role directly because AWS does not support attaching roles to users or groups.
+
+5. Instead, create a new IAM policy that allows the user or group to assume the role.
+
+Example AssumeRole Policy:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/jenkins-deployer"
+    }
+  ]
+}
+
+6. Attach this AssumeRole policy to the required IAM User or IAM Group.
+
+7. Update the Trust Policy of the jenkins-deployer role to trust the IAM User or IAM Group (or the AWS account, depending on your design), so that they are allowed to assume the role.
+
+8. When the IAM User assumes the jenkins-deployer role, AWS provides temporary credentials, and the user automatically inherits all the permissions attached to the role (AmazonEC2ContainerRegistryPowerUser, Custom EKS Policy, etc.).
+
+Summary:
+
+For EC2:
+IAM Role → Attach Permission Policies → Attach Role to EC2
+
+For IAM Users/Groups:
+IAM Role → Attach Permission Policies
+IAM User/Group → Attach AssumeRole Policy (sts:AssumeRole) → Assume IAM Role → Get all Role Permissions
+
+Note: IAM Roles cannot be attached directly to IAM Users or IAM Groups. They can only be assumed using the sts:AssumeRole permission.
