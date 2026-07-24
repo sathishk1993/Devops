@@ -1,0 +1,18 @@
+Worker Node IAM Role (EKSNodeRole)
+
+1. AmazonEKSWorkerNodePolicy
+   - Allows the EC2 worker node to communicate with the EKS control plane.
+   - Enables the node to join and register with the cluster.
+
+2. AmazonEC2ContainerRegistryPullOnly
+   - Allows the worker node to pull container images from Amazon ECR.
+
+3. AmazonEKS_CNI_Policy
+   - Allows the Amazon VPC CNI plugin to create and manage ENIs and IP addresses for pods.
+
+Attach this IAM Role to the EKS Managed Node Group.
+
+This is sufficient for:
+✔ Joining the EKS cluster
+✔ Pulling images from Amazon ECR
+✔ Providing networking for pods
