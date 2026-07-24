@@ -1,0 +1,127 @@
+Create EKS Cluster in AWS Console
+
+Prerequisites
+- VPC with at least 2 subnets in different Availability Zones
+- Internet Gateway
+- NAT Gateway (recommended for private worker nodes)
+
+Step 1: Create EKS Cluster IAM Role
+1. Go to IAM → Roles → Create Role.
+2. Select AWS Service.
+3. Select EKS → EKS - Cluster.
+4. Attach AmazonEKSClusterPolicy.
+5. Name the role: EKSClusterRole.
+6. Click Create Role.
+
+Step 2: Create Worker Node IAM Role
+1. Go to IAM → Roles → Create Role.
+2. Select AWS Service.
+3. Select EC2.
+4. Attach:
+   - AmazonEKSWorkerNodePolicy
+   - AmazonEC2ContainerRegistryPullOnly
+   - AmazonEKS_CNI_Policy
+5. Name the role: EKSNodeRole.
+6. Click Create Role.
+
+Step 3: Create EKS Cluster
+1. Go to Amazon EKS.
+2. Click Create Cluster.
+3. Select Custom Configuration.
+4. Enter:
+   - Cluster Name: my-eks-cluster
+   - Kubernetes Version: Latest Stable
+   - Cluster IAM Role: EKSClusterRole
+5. Click Next.
+
+Step 4: Configure Networking
+1. Select your VPC.
+2. Select at least two subnets in different Availability Zones.
+3. Select Cluster Security Group.
+4. Endpoint Access: Public and Private.
+5. Click Next.
+
+Step 5: Configure Logging (Optional)
+Enable:
+- API
+- Audit
+- Authenticator
+- Controller Manager
+- Scheduler
+Click Next.
+
+Step 6: Review and Create
+1. Review the configuration.
+2. Click Create Cluster.
+3. Wait until the cluster status becomes Active.
+
+Step 7: Create Managed Node Group
+1. Open the EKS Cluster.
+2. Select the Compute tab.
+3. Click Add Node Group.
+4. Enter:
+   - Node Group Name: my-nodegroup
+   - Node IAM Role: EKSNodeRole
+5. Click Next.
+
+Step 8: Configure Worker Nodes
+1. Instance Type: t3.medium.
+2. Desired Size: 2.
+3. Minimum Size: 1.
+4. Maximum Size: 3.
+5. Select the same VPC and subnets.
+6. Click Next.
+7. Review and click Create Node Group.
+8. Wait until the Node Group status becomes Active.
+
+Step 9: Configure kubectl
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+
+Verify:
+kubectl get nodes
+
+Step 10: Create EKS Access Entry
+1. Open EKS → my-eks-cluster.
+2. Select the Access tab.
+3. Click Create Access Entry.
+4. Principal ARN:
+   arn:aws:iam::<ACCOUNT_ID>:role/jenkins-deployer
+5. Type:
+   Standard
+6. Kubernetes Group:
+   jenkins-deployers
+7. Do not attach AmazonEKS Access Policies if you are using Kubernetes RBAC.
+8. Click Create.
+
+Step 11: Apply Kubernetes RBAC
+kubectl apply -f role.yaml
+kubectl apply -f rolebinding.yaml
+
+Step 12: Verify
+kubectl get nodes
+kubectl get pods -A
+kubectl auth can-i create deployments --namespace dev
+
+Architecture Flow
+
+VPC
+↓
+EKS Cluster
+↓
+Managed Node Group
+↓
+IAM Role (jenkins-deployer)
+↓
+AmazonEC2ContainerRegistryPowerUser + Custom EKS IAM Policy
+↓
+Attach IAM Role to Jenkins Agent EC2
+↓
+EKS Access Entry
+↓
+Kubernetes Role
+↓
+RoleBinding
+↓
+Jenkins Pipeline
+↓
+kubectl apply
