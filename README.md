@@ -418,7 +418,7 @@ EKS passes this identity to Kubernetes -> Kubernetes checks RoleBinding -> RoleB
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: jenkins-deployer
+  name: Jenkins-deployer
   namespace: dev
 
 rules:
@@ -498,7 +498,7 @@ metadata:
 
 subjects:
 - kind: Group
-  name: jenkins-deployers
+  name: Jenkins-deployer
   apiGroup: rbac.authorization.k8s.io
 
 roleRef:
