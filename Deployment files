@@ -1,0 +1,193 @@
+# ============================================================
+# Namespace
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+
+---
+# ============================================================
+# ConfigMap
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bankingapp-config
+  namespace: dev
+data:
+  APP_NAME: Banking Application
+  ENVIRONMENT: DEV
+
+---
+# ============================================================
+# Secret
+# ============================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bankingapp-secret
+  namespace: dev
+type: Opaque
+stringData:
+  DB_USERNAME: admin
+  DB_PASSWORD: password123
+
+---
+# ============================================================
+# Deployment
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankingapp
+  namespace: dev
+  labels:
+    app: bankingapp
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: bankingapp
+
+  template:
+    metadata:
+      labels:
+        app: bankingapp
+
+    spec:
+      containers:
+      - name: bankingapp
+
+        image: loksaieta/bankingwebapp:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 8082
+
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: bankingapp-config
+              key: APP_NAME
+
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: bankingapp-config
+              key: ENVIRONMENT
+
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bankingapp-secret
+              key: DB_USERNAME
+
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bankingapp-secret
+              key: DB_PASSWORD
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8082
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# ============================================================
+# Service
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankingapp-service
+  namespace: dev
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: bankingapp
+
+  ports:
+  - protocol: TCP
+    port: 8082
+    targetPort: 8082
+
+---
+# ============================================================
+# Ingress (AWS ALB)
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bankingapp-ingress
+  namespace: dev
+
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+
+spec:
+  ingressClassName: alb
+
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bankingapp-service
+            port:
+              number: 8082
+
+---
+# ============================================================
+# Horizontal Pod Autoscaler
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bankingapp-hpa
+  namespace: dev
+
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bankingapp
+
+  minReplicas: 2
+  maxReplicas: 6
+
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
