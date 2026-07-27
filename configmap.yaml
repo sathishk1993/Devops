@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: bankingapp-config
-  namespace: dev
-
-data:
-  APP_NAME: Banking Application
-  ENVIRONMENT: DEV
