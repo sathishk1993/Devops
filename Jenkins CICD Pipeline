@@ -75,9 +75,7 @@ pipeline {
             steps {
                 sh """
                 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-
                 docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
-
                 docker push ${ECR_REPO}:${IMAGE_TAG}
                 """
             }
@@ -87,7 +85,6 @@ pipeline {
             steps {
                 sh """
                 kubectl apply -f k8s-manifests/
-
                 kubectl rollout status deployment/bankingapp -n dev --timeout=300s
                 """
             }
