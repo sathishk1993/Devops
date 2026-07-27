@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "springboot-app"     // Change for each project
+        IMAGE_NAME = "loksaieta/bankingwebapp"     // Change for each project
         ECR_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
         IMAGE_TAG = "${BUILD_NUMBER}"
         SONAR_HOME = tool 'SonarScanner'
