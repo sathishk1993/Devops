@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "loksaieta/bankingwebapp"     // Change for each project
+        IMAGE_NAME = "bankingwebapp"
         ECR_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
         IMAGE_TAG = "${BUILD_NUMBER}"
         SONAR_HOME = tool 'SonarScanner'
@@ -83,25 +83,13 @@ pipeline {
             }
         }
 
-        stage('Update Manifest Repository') {
+        stage('Deploy to Amazon EKS') {
             steps {
-                dir('manifest-repo') {
+                sh """
+                kubectl apply -f k8s-manifests/
 
-                    git branch: 'main',
-                        credentialsId: 'github-creds',
-                        url: 'https://github.com/<YOUR_GITHUB_USERNAME>/<YOUR_MANIFEST_REPO>.git'
-
-                    sh """
-                    sed -i 's|image: .*|image: ${ECR_REPO}:${IMAGE_TAG}|g' deployment.yaml
-
-                    git config user.name "Jenkins"
-                    git config user.email "jenkins@example.com"
-
-                    git add deployment.yaml
-                    git commit -m "Updated image to ${IMAGE_TAG}" || true
-                    git push origin main
-                    """
-                }
+                kubectl rollout status deployment/bankingapp -n dev --timeout=300s
+                """
             }
         }
     }
@@ -119,7 +107,7 @@ Job Name     : ${env.JOB_NAME}
 
 Application built successfully.
 Docker image pushed to Amazon ECR.
-Manifest repository updated successfully.
+Application deployed successfully to Amazon EKS.
 
 Regards,
 Jenkins
