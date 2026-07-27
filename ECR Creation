@@ -1,0 +1,40 @@
+Create Amazon ECR (Elastic Container Registry) Repository
+
+1. Login to AWS Console.
+
+2. Search for "Amazon ECR".
+
+3. Click "Private repositories".
+
+4. Click "Create repository".
+
+5. Configure the repository:
+   - Visibility: Private
+   - Repository name: springboot-app (Must match IMAGE_NAME in Jenkinsfile)
+   - Tag immutability: Mutable (Default)
+   - Encryption: AES-256 (Default)
+   - Scan on push: Optional (Enable if required)
+
+6. Click "Create repository".
+
+7. Copy the Repository URI. It should look like:
+   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/springboot-app
+
+8. Verify from the Jenkins server:
+   aws ecr describe-repositories --region ap-south-1
+
+9. Ensure the Jenkins EC2 IAM Role has the following permission:
+   AmazonEC2ContainerRegistryPowerUser
+
+Example:
+
+Repository Name:
+springboot-app
+
+Repository URI:
+123456789012.dkr.ecr.ap-south-1.amazonaws.com/springboot-app
+
+Note:
+- Create the ECR repository only once.
+- Repository name must match IMAGE_NAME in your Jenkinsfile.
+- Every pipeline execution will push a new image tag (1, 2, 3, ...) into the same repository.
