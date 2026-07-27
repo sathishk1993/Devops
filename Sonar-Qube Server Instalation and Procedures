@@ -72,9 +72,10 @@ TCP 9000 → Your IP (for browser access)
 or
 TCP 9000 → Jenkins Security Group (recommended)
 
-10. Jenkins Configuration
 
-- Install SonarScanner on the Jenkins Agent (EC2-2).
+
+10. Jenkins Master Configuration (Jenkins Master- EC2)
+
 - Login to SonarQube.
 - Go to Administration → Security → Users → Tokens.
 - Generate a token.
