@@ -159,9 +159,9 @@ ip addr
 
 ---------------------------------------------------------
 
-Step 15: Check package status
+Step 15: Check package status   
 
-dpkg --configure -a
+dpkg --configure -a                    //Package installation/upgrade was interrupted
 
 If package installation stopped unexpectedly.
 
