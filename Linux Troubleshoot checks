@@ -1,0 +1,303 @@
+Linux Server Patching - Real-Time Troubleshooting Golden Rules
+
+Golden Rule #1
+Don't panic.
+Don't immediately reboot again.
+Don't reinstall packages.
+Collect information first.
+
+---------------------------------------------------------
+
+Step 1: Is the server reachable?
+
+Can you SSH?
+
+Yes → Continue troubleshooting.
+
+No →
+- Check AWS EC2 Instance Status
+- Check System Status Checks
+- Check Security Group
+- Check Network ACL
+- Check Route Table
+- Check Console Output
+- Use EC2 Serial Console (if enabled)
+
+---------------------------------------------------------
+
+Step 2: Check basic server health
+
+hostname
+date
+uptime
+uname -r
+cat /etc/os-release
+
+---------------------------------------------------------
+
+Step 3: Check disk
+
+df -h
+
+If disk is 100%
+→ Remove old logs
+→ Remove unwanted files
+→ Run apt autoremove
+→ Clean package cache if appropriate
+
+---------------------------------------------------------
+
+Step 4: Check memory
+
+free -m
+
+If memory is full
+
+top
+
+or
+
+htop
+
+Find high memory consuming process.
+
+---------------------------------------------------------
+
+Step 5: Check CPU
+
+uptime
+
+top
+
+If CPU is 100%
+
+Find which process is consuming CPU.
+
+---------------------------------------------------------
+
+Step 6: Check failed services
+
+systemctl --failed
+
+---------------------------------------------------------
+
+Step 7: Check service status
+
+systemctl status <service>
+
+Example
+
+systemctl status nginx
+systemctl status docker
+systemctl status kubelet
+
+---------------------------------------------------------
+
+Step 8: Read logs
+
+journalctl -xe
+
+or
+
+journalctl -u <service>
+
+Example
+
+journalctl -u nginx -n 100
+
+---------------------------------------------------------
+
+Step 9: Check open ports
+
+ss -tulpn
+
+If application should run on 8080
+
+ss -tulpn | grep 8080
+
+---------------------------------------------------------
+
+Step 10: Check application locally
+
+curl http://localhost
+
+or
+
+curl http://localhost:8082
+
+---------------------------------------------------------
+
+Step 11: Check network
+
+ping 8.8.8.8
+
+If fails
+→ Internet problem
+
+ping google.com
+
+If fails but 8.8.8.8 works
+→ DNS issue
+
+---------------------------------------------------------
+
+Step 12: Check DNS
+
+resolvectl status
+
+---------------------------------------------------------
+
+Step 13: Check routing
+
+ip route
+
+---------------------------------------------------------
+
+Step 14: Check IP Address
+
+ip addr
+
+---------------------------------------------------------
+
+Step 15: Check package status
+
+dpkg --configure -a
+
+If package installation stopped unexpectedly.
+
+---------------------------------------------------------
+
+Step 16: Check apt lock
+
+lsof /var/lib/dpkg/lock-frontend
+
+---------------------------------------------------------
+
+Step 17: Check updates
+
+apt list --upgradable
+
+---------------------------------------------------------
+
+Step 18: Check reboot requirement
+
+cat /var/run/reboot-required
+
+---------------------------------------------------------
+
+Step 19: Verify kernel
+
+uname -r
+
+---------------------------------------------------------
+
+Step 20: Verify application
+
+Browser
+
+OR
+
+curl
+
+OR
+
+API Health Endpoint
+
+---------------------------------------------------------
+
+Kubernetes Checks
+
+kubectl get nodes
+
+kubectl get pods -A
+
+kubectl get svc -A
+
+kubectl get deployments -A
+
+kubectl describe pod <pod>
+
+kubectl logs <pod>
+
+kubectl get events -A
+
+---------------------------------------------------------
+
+Docker Checks
+
+docker ps
+
+docker images
+
+docker logs <container>
+
+docker inspect <container>
+
+---------------------------------------------------------
+
+Java Checks
+
+java --version
+
+ps -ef | grep java
+
+---------------------------------------------------------
+
+Nginx Checks
+
+nginx -t
+
+systemctl restart nginx
+
+---------------------------------------------------------
+
+Database Checks
+
+systemctl status mysql
+
+systemctl status postgresql
+
+---------------------------------------------------------
+
+Golden Troubleshooting Order
+
+1. Is server reachable?
+2. Is OS healthy?
+3. Disk OK?
+4. Memory OK?
+5. CPU OK?
+6. Network OK?
+7. DNS OK?
+8. Service running?
+9. Port listening?
+10. Application responding?
+11. Logs?
+12. Configuration?
+13. Restart service (only after understanding the issue).
+14. Verify application.
+15. Escalate with evidence if still unresolved.
+
+---------------------------------------------------------
+
+Golden Rule
+
+Never say
+
+"I don't know."
+
+Instead say
+
+"I checked:
+- Service status
+- Logs
+- Disk
+- Memory
+- CPU
+- Network
+- DNS
+- Port
+- Application health
+
+Here are the findings..."
+
+This is exactly what senior DevOps engineers expect.
