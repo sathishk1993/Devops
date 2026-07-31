@@ -93,7 +93,7 @@ systemctl status kubelet
 
 ---------------------------------------------------------
 
-Step 8: Read logs
+Step 8: Read logs Shows recent system logs and error messages
 
 journalctl -xe
 
