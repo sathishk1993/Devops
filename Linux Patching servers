@@ -1,0 +1,152 @@
+Linux Server Patching - Real-Time Production Workflow
+
+Scenario:
+Manager/TL: "Please patch the Ubuntu production server."
+
+Step 1: Understand the task
+- Which server needs patching?
+- Is it Production, QA, or UAT?
+- Is there an approved maintenance window?
+- Is a reboot allowed?
+- Is there a backup/VM snapshot?
+- Which application is running on this server?
+
+Step 2: Connect to the server
+
+ssh ubuntu@<server-ip>
+
+Step 3: Capture the current server health
+
+hostname
+date
+cat /etc/os-release
+uname -r
+uptime
+df -h
+free -m
+ip addr
+ip route
+systemctl --failed
+systemctl list-units --type=service --state=running
+ss -tulpn
+who
+java --version      (if Java application)
+docker --version    (if Docker is installed)
+kubectl get nodes   (if Kubernetes server)
+
+Step 4: Verify the application is working
+
+For Nginx:
+curl http://localhost
+
+For Spring Boot:
+curl http://localhost:8082
+
+For Kubernetes:
+kubectl get pods -A
+kubectl get svc -A
+
+Step 5: Check available updates
+
+sudo apt update
+apt list --upgradable
+
+(Optional) Check only security updates
+
+sudo unattended-upgrade --dry-run -d
+
+Step 6: Inform TL/Manager if major updates are present
+
+Examples:
+- Kernel update
+- Docker update
+- Kubernetes update
+- Database update
+
+If a kernel update is included, inform that a reboot will be required.
+
+Step 7: Apply patches
+
+Security patches only:
+sudo unattended-upgrade -d
+
+OR
+
+Regular updates:
+sudo apt upgrade -y
+
+OR
+
+Full OS upgrade (including kernel/dependencies):
+sudo apt full-upgrade -y
+
+Step 8: Check if reboot is required
+
+cat /var/run/reboot-required
+
+If the file exists, reboot during the approved maintenance window.
+
+Step 9: Reboot
+
+sudo reboot
+
+Wait for the server to come back online.
+
+Step 10: Verify after reboot
+
+Reconnect:
+
+ssh ubuntu@<server-ip>
+
+Run:
+
+hostname
+date
+uname -r
+uptime
+df -h
+free -m
+systemctl --failed
+ss -tulpn
+
+Step 11: Verify the application again
+
+Nginx:
+curl http://localhost
+
+Spring Boot:
+curl http://localhost:8082
+
+Kubernetes:
+kubectl get nodes
+kubectl get pods -A
+kubectl get svc -A
+
+Step 12: Confirm patching is successful
+
+- Server is reachable.
+- Kernel version is updated (if applicable).
+- No failed services.
+- Required ports are listening.
+- Application is accessible.
+- Users can access the application.
+
+Step 13: Inform TL/Manager
+
+Example:
+
+"Linux server patching completed successfully.
+Server rebooted successfully.
+Kernel updated successfully.
+All services are running.
+Application health check passed.
+No issues observed."
+
+Golden Rule:
+
+1. Never patch production without an approved maintenance window.
+2. Always capture the server health before patching.
+3. Always check what packages will be updated.
+4. Never reboot without approval (unless it's already part of the approved maintenance).
+5. Always verify the application after patching.
+6. Report the completion status to your TL/Manager.
