@@ -68,7 +68,7 @@ If a kernel update is included, inform that a reboot will be required.
 Step 7: Apply patches
 
 Security patches only:
-sudo unattended-upgrade -d
+sudo unattended-upgrade -d                 //this command install the security updates.
 
 OR
 
