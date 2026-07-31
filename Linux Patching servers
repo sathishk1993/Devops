@@ -53,7 +53,7 @@ apt list --upgradable
 
 (Optional) Check only security updates
 
-sudo unattended-upgrade --dry-run -d
+sudo unattended-upgrade --dry-run -d               // this shows all the security updates without any installation.
 
 Step 6: Inform TL/Manager if major updates are present
 
