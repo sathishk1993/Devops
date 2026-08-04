@@ -1,0 +1,115 @@
+Real-Time Linux Disk Mounting (AWS EC2 + EBS)
+
+Scenario:
+The application server is running out of disk space. The root partition (/) is 95% full, so we add a new EBS volume.
+
+1. Create a new EBS Volume in AWS.
+2. Attach the EBS Volume to the EC2 instance.Real-Time Linux Disk Mounting (AWS EC2 + EBS)
+
+Scenario:
+The application server is running out of disk space. The root partition (/) is 95% full, so we add a new EBS volume.
+
+1. Create a new EBS Volume in AWS.
+2. Attach the EBS Volume to the EC2 instance.
+3. Login to the EC2 instance using SSH.
+4. Verify the new disk:
+   lsblk
+
+5. Check whether the disk already has a filesystem:
+   blkid
+   file -s /dev/xvdf
+
+6. If it is a NEW empty disk, create a filesystem:
+   sudo mkfs.ext4 /dev/xvdf
+
+   (Do NOT run mkfs if the disk already contains data.)
+
+7. Create a mount point:
+   sudo mkdir /data
+
+8. Mount the disk:
+   sudo mount /dev/xvdf /data
+
+9. Verify the mount:
+   df -h
+   lsblk
+
+10. Make the mount persistent after reboot:
+    sudo blkid
+    Copy the UUID and add it to /etc/fstab.
+
+    Example:
+    UUID=<UUID>   /data   ext4   defaults,nofail   0   2
+
+11. Test the fstab entry:
+    sudo mount -a
+
+12. Store application data, logs, backups, or database files in /data.
+
+Common Commands:
+lsblk                     # List disks
+blkid                     # Show filesystem UUID
+file -s /dev/xvdf         # Check if disk is formatted
+mkfs.ext4 /dev/xvdf       # Create filesystem (new disk only)
+mkdir /data               # Create mount point
+mount /dev/xvdf /data     # Mount the disk
+df -h                     # Verify mounted filesystem
+umount /data              # Unmount the disk
+mount -a                  # Test /etc/fstab entries
+
+Interview Answer:
+
+"In production, when additional storage is required, we create and attach a new EBS volume to the EC2 instance.
+We verify the disk using lsblk. If it's a new volume, we create a filesystem using mkfs. We then create a mount point such as /data, 
+mount the volume using the mount command, verify it with df -h, and add the UUID to /etc/fstab so it mounts automatically after every reboot. 
+If the volume already contains data, we do not format it; we mount it directly."
+
+3. Login to the EC2 instance using SSH.
+4. Verify the new disk:
+   lsblk
+
+5. Check whether the disk already has a filesystem:
+   blkid
+   file -s /dev/xvdf
+
+6. If it is a NEW empty disk, create a filesystem:
+   sudo mkfs.ext4 /dev/xvdf
+
+   (Do NOT run mkfs if the disk already contains data.)
+
+7. Create a mount point:
+   sudo mkdir /data
+
+8. Mount the disk:
+   sudo mount /dev/xvdf /data
+
+9. Verify the mount:
+   df -h
+   lsblk
+
+10. Make the mount persistent after reboot:
+    sudo blkid
+    Copy the UUID and add it to /etc/fstab.
+
+    Example:
+    UUID=<UUID>   /data   ext4   defaults,nofail   0   2
+
+11. Test the fstab entry:
+    sudo mount -a
+
+12. Store application data, logs, backups, or database files in /data.
+
+Common Commands:
+lsblk                     # List disks
+blkid                     # Show filesystem UUID
+file -s /dev/xvdf         # Check if disk is formatted
+mkfs.ext4 /dev/xvdf       # Create filesystem (new disk only)
+mkdir /data               # Create mount point
+mount /dev/xvdf /data     # Mount the disk
+df -h                     # Verify mounted filesystem
+umount /data              # Unmount the disk
+mount -a                  # Test /etc/fstab entries
+
+Interview Answer:
+
+"In production, when additional storage is required, we create and attach a new EBS volume to the EC2 instance. We verify the disk using lsblk. If it's a new volume, we create a filesystem using mkfs. We then create a mount point such as /data, mount the volume using the mount command, verify it with df -h, and add the UUID to /etc/fstab so it mounts automatically after every reboot. If the volume already contains data, we do not format it; we mount it directly."
