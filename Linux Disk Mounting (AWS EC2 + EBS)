@@ -40,6 +40,7 @@ The application server is running out of disk space. The root partition (/) is 9
 
     Example:
     UUID=<UUID>   /data   ext4   defaults,nofail   0   2
+UUID=8fb95cef-95fc-48ca-aaab-3f1b1df59748   /data   ext4   defaults,nofail   0   2
 
 11. Test the fstab entry:
     sudo mount -a
