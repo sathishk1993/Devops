@@ -10,7 +10,7 @@ Create Amazon ECR (Elastic Container Registry) Repository
 
 5. Configure the repository:
    - Visibility: Private
-   - Repository name: springboot-app (Must match IMAGE_NAME in Jenkinsfile)
+   - Repository name: bankingwebapp (Must match IMAGE_NAME in Jenkinsfile)
    - Tag immutability: Mutable (Default)
    - Encryption: AES-256 (Default)
    - Scan on push: Optional (Enable if required)
