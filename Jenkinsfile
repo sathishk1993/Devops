@@ -1,5 +1,5 @@
 pipeline {
-    agent jenkinsagent
+    agent any
 
     environment {
         IMAGE_NAME = "bankingwebapp"
