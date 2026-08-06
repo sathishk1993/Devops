@@ -83,20 +83,21 @@ pipeline {
             }
         }
 
-        stage('Deploy to Amazon EKS') {
-            steps {
-                sh """
-                kubectl apply -f manifests/
+       stage('Deploy to Amazon EKS') {
+    steps {
+        sh """
+        kubectl apply -f bootstrap/
+        kubectl apply -f manifests/
 
-                kubectl set image deployment/bankingapp \
-                bankingapp=${ECR_REPO}:${IMAGE_TAG} \
-                -n dev
+        kubectl set image deployment/bankingapp \
+        bankingapp=${ECR_REPO}:${IMAGE_TAG} \
+        -n dev
 
-                kubectl rollout status deployment/bankingapp \
-                -n dev \
-                --timeout=300s
-                """
-            }
-        }
+        kubectl rollout status deployment/bankingapp \
+        -n dev \
+        --timeout=300s
+        """
+    }
+}
     }
 }
