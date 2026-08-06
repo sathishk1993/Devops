@@ -18,7 +18,7 @@ Create Amazon ECR (Elastic Container Registry) Repository
 6. Click "Create repository".
 
 7. Copy the Repository URI. It should look like:
-   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/springboot-app
+   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/bankingwebapp
 
 8. Verify from the Jenkins server:
    aws ecr describe-repositories --region ap-south-1
@@ -29,10 +29,10 @@ Create Amazon ECR (Elastic Container Registry) Repository
 Example:
 
 Repository Name:
-springboot-app
+bankingwebapp
 
 Repository URI:
-123456789012.dkr.ecr.ap-south-1.amazonaws.com/springboot-app
+123456789012.dkr.ecr.ap-south-1.amazonaws.com/bankingwebapp
 
 Note:
 - Create the ECR repository only once.
