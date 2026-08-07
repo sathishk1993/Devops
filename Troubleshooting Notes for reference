@@ -1,0 +1,621 @@
+Jenkins + SonarQube + Docker + ECR + EKS Troubleshooting Guide
+
+1. Jenkins URL
+----------------
+Manage Jenkins
+→ System
+→ Jenkins URL
+
+Use:
+http://<JENKINS_MASTER_PUBLIC_IP>:8080/
+
+Reason:
+- Browser access
+- SonarQube Webhook
+- Email Notifications
+
+------------------------------------------------------------
+
+2. Jenkins Agent Configuration
+------------------------------
+Host = Jenkins Agent Private IP
+
+Example:
+10.0.0.5
+
+Do NOT use Public IP.
+
+Reason:
+Master and Agent communicate inside the VPC.
+
+------------------------------------------------------------
+
+3. Jenkins Agent Authentication Failed
+--------------------------------------
+Error:
+Authentication failed
+Server rejected the private key
+
+Troubleshooting:
+
+On Jenkins Master
+
+ssh -i ~/.ssh/id_ecdsa agent@10.0.0.5
+
+If login fails
+
+Copy Master's Public Key
+
+cat ~/.ssh/id_ecdsa.pub
+
+Paste into
+
+/home/agent/.ssh/authorized_keys
+
+------------------------------------------------------------
+
+4. Jenkins Agent Offline
+------------------------
+Go to
+
+Manage Jenkins
+→ Nodes
+→ Jenkins Agent
+→ Launch Agent
+
+Usually one-time activity.
+
+------------------------------------------------------------
+
+5. Maven Not Found
+------------------
+
+Error
+
+mvn: not found
+
+Verify
+
+which mvn
+
+mvn --version
+
+Install Maven if missing.
+
+Reconnect Jenkins Agent.
+
+------------------------------------------------------------
+
+6. SonarScanner Not Found
+-------------------------
+
+Pipeline
+
+tool 'SonarScanner'
+
+must exactly match
+
+Manage Jenkins
+→ Global Tool Configuration
+→ SonarScanner
+
+Names are Case Sensitive.
+
+------------------------------------------------------------
+
+7. Wrong Jenkins Pipeline Agent
+-------------------------------
+
+Wrong
+
+agent jenkinsagent
+
+Correct
+
+agent {
+    label 'jenkinsagent'
+}
+
+------------------------------------------------------------
+
+8. Sonar Maven Plugin Missing
+-----------------------------
+
+Error
+
+No plugin found for prefix 'sonar'
+
+Reason
+
+pom.xml missing sonar plugin.
+
+Add
+
+<plugin>
+    <groupId>org.sonarsource.scanner.maven</groupId>
+    <artifactId>sonar-maven-plugin</artifactId>
+    <version>5.1.0.4751</version>
+</plugin>
+
+------------------------------------------------------------
+
+9. SonarQube URL Wrong
+----------------------
+
+Wrong
+
+3.xx.xx.xx:9000
+
+Correct
+
+http://3.xx.xx.xx:9000
+
+Always include
+
+http://
+
+------------------------------------------------------------
+
+10. SonarQube Scan Success
+--------------------------
+
+BUILD SUCCESS
+
+means
+
+✓ Build Success
+✓ Sonar Analysis Completed
+✓ Report Uploaded
+
+------------------------------------------------------------
+
+11. Quality Gate Waiting
+------------------------
+
+Pipeline
+
+timeout(time:5, unit:'MINUTES') {
+    waitForQualityGate abortPipeline:true
+}
+
+This DOES NOT wait 5 minutes.
+
+It waits only until Sonar finishes.
+
+5 minutes is Maximum Timeout.
+
+------------------------------------------------------------
+
+12. Quality Gate Timeout
+------------------------
+
+Reason
+
+SonarQube Webhook Missing.
+
+Configure
+
+SonarQube
+
+Administration
+→ Configuration
+→ Webhooks
+
+Create
+
+Name
+Jenkins
+
+URL
+
+http://<JENKINS_PUBLIC_IP>:8080/sonarqube-webhook/
+
+Secret
+
+Leave Blank
+
+------------------------------------------------------------
+
+13. Docker Permission Denied
+----------------------------
+
+Error
+
+permission denied while trying to connect to docker.sock
+
+Reason
+
+Agent user not in docker group.
+
+Fix
+
+sudo usermod -aG docker agent
+
+Logout
+
+Login again
+
+Verify
+
+groups
+
+Expected
+
+agent docker
+
+------------------------------------------------------------
+
+14. Docker Base Image Not Found
+-------------------------------
+
+Wrong
+
+FROM openjdk:21
+
+Correct
+
+FROM eclipse-temurin:21-jdk
+
+------------------------------------------------------------
+
+15. Trivy Image Scan Failed
+---------------------------
+
+Error
+
+no space left on device
+
+Reason
+
+Disk Full.
+
+Check
+
+df -h
+
+Clean
+
+docker system prune -af
+
+docker image prune -af
+
+docker builder prune -af
+
+docker volume prune -f
+
+rm -rf ~/.cache/trivy
+
+rm -rf /tmp/trivy*
+
+Best Solution
+
+Increase Jenkins Agent Root Volume
+
+8 GB
+
+↓
+
+20 GB
+
+------------------------------------------------------------
+
+16. Docker Images Accumulate
+----------------------------
+
+Every Build Creates
+
+bankingwebapp:1
+
+bankingwebapp:2
+
+bankingwebapp:3
+
+...
+
+Cleanup
+
+docker image prune -af
+
+------------------------------------------------------------
+
+17. Jenkins Workspace
+---------------------
+
+Every Build Stores
+
+Workspace
+
+Source Code
+
+Target Folder
+
+Logs
+
+Artifacts
+
+If pipeline runs on Agent
+
+agent {
+    label 'jenkinsagent'
+}
+
+Workspace exists on Agent.
+
+Clean
+
+sudo rm -rf /home/agent/workspace/*
+
+Not on Jenkins Master.
+
+------------------------------------------------------------
+
+18. ECR Push Failed
+-------------------
+
+Error
+
+repository bankingwebapp does not exist
+
+Create Repository
+
+AWS Console
+
+ECR
+
+↓
+
+Private Repository
+
+↓
+
+Repository Name
+
+bankingwebapp
+
+------------------------------------------------------------
+
+19. SonarQube Authentication
+----------------------------
+
+Browser Login
+
+admin/admin
+
+Pipeline Uses
+
+Authentication Token
+
+Generate
+
+Administration
+
+↓
+
+Security
+
+↓
+
+Users
+
+↓
+
+Tokens
+
+Store Token in Jenkins Credentials.
+
+------------------------------------------------------------
+
+20. Production EC2 Reboot
+-------------------------
+
+Development
+
+✓ Can Reboot
+
+Production
+
+Never reboot directly.
+
+Need
+
+Approval
+
+Maintenance Window
+
+Change Request
+
+------------------------------------------------------------
+
+21. Jenkins CI/CD Flow
+----------------------
+
+GitHub
+↓
+
+Checkout
+
+↓
+
+Maven Build
+
+↓
+
+Unit Test
+
+↓
+
+SonarQube Scan
+
+↓
+
+Quality Gate
+
+↓
+
+Trivy File Scan
+
+↓
+
+Docker Build
+
+↓
+
+Trivy Image Scan
+
+↓
+
+Push Image to Amazon ECR
+
+↓
+
+Deploy to Amazon EKS
+
+↓
+
+kubectl rollout status
+
+------------------------------------------------------------
+
+22. Golden Troubleshooting Flow
+-------------------------------
+
+1. Read First ERROR (Ignore skipped stages)
+
+2. Check Jenkins Agent Online
+
+3. Check Disk
+
+df -h
+
+4. Verify Required Tools
+
+java --version
+
+mvn --version
+
+docker --version
+
+trivy --version
+
+kubectl version --client
+
+aws --version
+
+5. Verify Docker Permission
+
+groups
+
+docker ps
+
+6. Verify SonarQube
+
+Server Reachable
+
+Token Configured
+
+Webhook Configured
+
+7. Verify AWS
+
+aws sts get-caller-identity
+
+aws ecr describe-repositories
+
+8. Verify Kubernetes
+
+kubectl get nodes
+
+kubectl get pods -A
+
+9. Re-run Pipeline
+
+------------------------------------------------------------
+
+23. Commands Used Frequently
+----------------------------
+
+Disk Usage
+
+df -h
+
+Docker Usage
+
+docker system df
+
+Clean Docker
+
+docker system prune -af
+
+docker image prune -af
+
+docker builder prune -af
+
+docker volume prune -f
+
+Clean Trivy
+
+rm -rf ~/.cache/trivy
+
+rm -rf /tmp/trivy*
+
+Check Groups
+
+groups
+
+Check Docker
+
+docker ps
+
+Check Workspace
+
+find / -type d -name workspace
+
+Check Maven
+
+mvn --version
+
+Check Java
+
+java --version
+
+Check AWS Identity
+
+aws sts get-caller-identity
+
+Check ECR
+
+aws ecr describe-repositories
+
+Check Kubernetes
+
+kubectl get nodes
+
+kubectl get pods -A
+
+Check Rollout
+
+kubectl rollout status deployment/<deployment-name> -n <namespace>
+
+------------------------------------------------------------
+
+Golden Principle
+
+Always troubleshoot in this order:
+
+Read First Error
+↓
+Check Agent
+↓
+Check Disk
+↓
+Check Tool Installation
+↓
+Check Permissions
+↓
+Check Network Connectivity
+↓
+Check AWS Resources
+↓
+Check Kubernetes Resources
+↓
+Re-run the Pipeline
