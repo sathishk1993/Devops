@@ -1,0 +1,277 @@
+MODERN AWS APPROACH — IAM IDENTITY CENTER / SSO → EKS ACCESS
+
+REAL-TIME EXAMPLE
+
+Requirement:
+John needs permission to deploy applications to the "dev" namespace
+of an EKS cluster.
+
+Flow:
+
+John
+↓
+IAM Identity Center / SSO
+↓
+Permission Set
+↓
+AWSReservedSSO IAM Role
+↓
+EKS Access Entry
+↓
+EKS Access Policy
+↓
+dev namespace
+↓
+Deploy application
+
+
+STEP 1 — CREATE / USE USER IN IAM IDENTITY CENTER
+
+AWS Console
+→ IAM Identity Center
+→ Users
+→ Create user
+
+Example:
+
+User:
+John
+
+
+STEP 2 — CREATE PERMISSION SET
+
+AWS Console
+→ IAM Identity Center
+→ Permission sets
+→ Create permission set
+
+Example:
+
+Permission Set:
+EKS-Dev-Developer
+
+Purpose:
+
+Defines what AWS account access John gets through SSO.
+
+IMPORTANT:
+
+Do not create a normal IAM User for John
+for this modern human-access approach.
+
+
+STEP 3 — ASSIGN JOHN TO THE AWS ACCOUNT
+
+AWS Console
+→ IAM Identity Center
+→ AWS accounts
+→ Select the required AWS account
+→ Assign users or groups
+→ Select John
+→ Select EKS-Dev-Developer
+→ Submit
+
+AWS creates/manages an IAM role for this SSO assignment.
+
+Example role:
+
+AWSReservedSSO_EKS-Dev-Developer_xxxxx
+
+
+STEP 4 — GET THE SSO IAM ROLE ARN
+
+The role will look similar to:
+
+arn:aws:iam::123456789012:role/AWSReservedSSO_EKS-Dev-Developer_xxxxx
+
+IMPORTANT:
+
+This IAM Role is the identity that will be given access to EKS.
+
+
+STEP 5 — CREATE EKS ACCESS ENTRY
+
+AWS Console
+→ EKS
+→ Clusters
+→ dev-eks
+→ Access
+→ Create access entry
+
+Principal ARN:
+
+arn:aws:iam::123456789012:role/AWSReservedSSO_EKS-Dev-Developer_xxxxx
+
+IMPORTANT:
+
+Use the IAM ROLE ARN.
+
+Do NOT use John's IAM User ARN.
+
+
+STEP 6 — ASSOCIATE EKS ACCESS POLICY
+
+Open the newly created EKS Access Entry.
+
+→ Add access policy
+
+Choose the appropriate EKS Access Policy
+for the required permissions.
+
+For deployment access:
+
+Choose an appropriate policy that allows
+the required edit/write Kubernetes permissions.
+
+Scope the access if required:
+
+Type:
+Namespace
+
+Namespace:
+dev
+
+IMPORTANT:
+
+Do not give cluster-admin access unless the user
+actually needs cluster-wide administrative permissions.
+
+
+STEP 7 — JOHN LOGS INTO AWS
+
+John opens the company's:
+
+AWS IAM Identity Center / AWS Access Portal
+
+John signs in.
+
+Then:
+
+Select AWS Account
+↓
+Select the assigned role
+↓
+AWS provides temporary credentials
+
+
+STEP 8 — CONFIGURE KUBECTL
+
+John runs:
+
+aws eks update-kubeconfig \
+  --region ap-south-1 \
+  --name dev-eks
+
+
+STEP 9 — TEST ACCESS
+
+Check pods:
+
+kubectl get pods -n dev
+
+Check deployments:
+
+kubectl get deployments -n dev
+
+
+STEP 10 — DEPLOY APPLICATION
+
+If the assigned EKS Access Policy allows deployment:
+
+kubectl apply -f deployment.yaml -n dev
+
+Example:
+
+kubectl rollout restart deployment myapp -n dev
+
+kubectl scale deployment myapp --replicas=3 -n dev
+
+
+FINAL FLOW:
+
+John
+↓
+IAM Identity Center / SSO
+↓
+Permission Set
+↓
+AWSReservedSSO IAM Role
+↓
+EKS Access Entry
+↓
+EKS Access Policy
+↓
+dev namespace
+↓
+Kubernetes resources
+↓
+Deploy application
+
+
+WHAT EACH PART DOES:
+
+IAM Identity Center / SSO
+→ Authenticates John
+
+Permission Set
+→ Defines John's AWS account access through SSO
+
+AWSReservedSSO IAM Role
+→ IAM identity used when John accesses the AWS account
+
+EKS Access Entry
+→ Connects the IAM Role to the EKS cluster
+
+EKS Access Policy
+→ Defines what the IAM Role can do inside EKS
+
+Namespace scope
+→ Limits access to the required Kubernetes namespace
+
+
+IMPORTANT DIFFERENCE FROM THE OLD APPROACH:
+
+OLD APPROACH:
+
+IAM User
+↓
+sts:AssumeRole
+↓
+IAM Role
+↓
+EKS Access
+
+MODERN APPROACH:
+
+IAM Identity Center / SSO
+↓
+IAM Role
+↓
+EKS Access Entry
+↓
+EKS Access Policy
+
+
+GOLDEN RULE:
+
+For normal human AWS access:
+
+IAM Identity Center / SSO
+→ IAM Role
+→ AWS permissions
+
+
+For EKS:
+
+IAM Identity Center / SSO
+→ IAM Role
+→ EKS Access Entry
+→ EKS Access Policy
+→ Kubernetes resources
+
+
+ONE-LINE INTERVIEW ANSWER:
+
+"In the modern approach, we use IAM Identity Center for human authentication, assign the user a permission set that provides an IAM role,
+and then add that IAM role to the EKS Access Entry. We associate the required EKS Access Policy and 
+scope it to the required namespace so the user gets only the Kubernetes permissions they need."
