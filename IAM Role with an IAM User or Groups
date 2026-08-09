@@ -41,3 +41,319 @@ IAM Role → Attach Permission Policies
 IAM User/Group → Attach AssumeRole Policy (sts:AssumeRole) → Assume IAM Role → Get all Role Permissions
 
 Note: IAM Roles cannot be attached directly to IAM Users or IAM Groups. They can only be assumed using the sts:AssumeRole permission.
+
+
+
+=====================================================================================
+
+
+Role → trusts John
+
+John → allowed to assume Role
+
+Role → has ECR/EKS permissions
+
+
+IAM USER → ASSUME ROLE → EKS/ECR ACCESS
+
+REAL-TIME EXAMPLE
+
+Requirement:
+John needs permission to use ECR and deploy to an EKS cluster.
+
+Flow:
+
+John (IAM User)
+↓
+sts:AssumeRole
+↓
+jenkins-deployer (IAM Role)
+↓
+ECR + EKS permissions
+
+
+STEP 1 — CREATE THE IAM ROLE
+
+Go to:
+
+AWS Console
+→ IAM
+→ Roles
+→ Create role
+
+Choose: >>Trusted entity type: >>AWS account
+
+Create the role : Role name: jenkins-deployer
+
+Important:
+
+The role has TWO types of policies:
+
+1. Trust Policy
+   → Who is allowed to assume the role?
+
+2. Permission Policies
+   → What can the role do after it is assumed?
+
+
+STEP 2 — CONFIGURE THE ROLE TRUST POLICY
+
+Go to:
+
+IAM
+→ Roles
+→ jenkins-deployer
+→ Trust relationships
+→ Edit trust policy
+
+Add John's IAM User ARN as the Principal.
+
+Example:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:user/john"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+
+Meaning:
+
+jenkins-deployer trusts John.
+
+John is allowed to assume this role from the role's trust-policy perspective.
+
+
+STEP 3 — ATTACH PERMISSIONS TO THE ROLE
+
+Go to:
+
+IAM
+→ Roles
+→ jenkins-deployer
+→ Permissions
+→ Add permissions
+
+Attach the permissions required by the job.
+
+Example:
+
+ECR permissions:
+AmazonEC2ContainerRegistryPowerUser
+
+EKS permissions:
+Create a custom IAM policy containing only the AWS EKS API actions required.
+
+Example:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "eks:DescribeCluster",
+        "eks:ListClusters",
+        "eks:DescribeNodegroup",
+        "eks:ListNodegroups"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+
+IMPORTANT:
+
+These IAM permissions allow the role to call AWS EKS APIs.
+
+They do NOT automatically mean the role can create/update Kubernetes Deployments or Pods.
+
+For Kubernetes resource access, the IAM role must also be authorized in EKS using EKS Access Entry + EKS Access Policy, or Kubernetes RBAC, depending on the design.
+
+
+STEP 4 — GO TO JOHN'S IAM USER
+
+Go to:
+
+IAM
+→ Users
+→ john
+→ Permissions
+→ Add permissions
+→ Create inline policy
+
+Create a policy allowing John to assume the role.
+
+Example:
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::123456789012:role/jenkins-deployer"
+    }
+  ]
+}
+
+Meaning:
+
+John is allowed to assume jenkins-deployer.
+
+
+STEP 5 — BOTH SIDES MUST ALLOW ASSUMEROLE
+
+Two checks happen:
+
+ROLE TRUST POLICY:
+
+jenkins-deployer
+↓
+Trusts John
+
+
+JOHN'S PERMISSION POLICY:
+
+John
+↓
+Allowed to sts:AssumeRole
+↓
+jenkins-deployer
+
+Both sides must allow the operation.
+
+
+STEP 6 — JOHN ASSUMES THE ROLE
+
+John can run:
+
+aws sts assume-role \
+  --role-arn arn:aws:iam::123456789012:role/jenkins-deployer \
+  --role-session-name john-session
+
+AWS STS returns temporary credentials:
+
+AccessKeyId
+SecretAccessKey
+SessionToken
+
+John is now operating using temporary credentials for the jenkins-deployer role.
+
+
+STEP 7 — JOHN GETS THE ROLE'S PERMISSIONS
+
+After assuming the role:
+
+John
+↓
+Temporary credentials
+↓
+jenkins-deployer
+↓
+Permissions attached to jenkins-deployer
+
+For example:
+
+ECR permissions
++
+EKS AWS API permissions
++
+EKS/Kubernetes permissions if separately configured
+
+
+IMPORTANT CONCEPT:
+
+The role is NOT permanently attached to John.
+
+John temporarily assumes the role.
+
+The permissions come from the role while John is using the temporary role credentials.
+
+
+STEP 8 — EKS ACCESS
+
+If John needs to deploy Kubernetes resources, the role must also be authorized to access the EKS cluster.
+
+Recommended modern EKS approach:
+
+EKS
+→ Cluster
+→ Access
+→ Create access entry
+
+Principal:
+
+arn:aws:iam::123456789012:role/jenkins-deployer
+
+Then associate the appropriate EKS Access Policy and scope it to the required namespace, if applicable.
+
+Example:
+
+jenkins-deployer
+↓
+EKS Access Entry
+↓
+EKS Access Policy
+↓
+dev namespace
+↓
+Kubernetes resources
+
+
+FINAL FLOW
+
+John
+(IAM User)
+↓
+John has:
+sts:AssumeRole permission
+↓
+STS AssumeRole
+↓
+jenkins-deployer
+↓
+Role has:
+ECR permissions
++
+EKS AWS permissions
+↓
+EKS Access Entry
+↓
+EKS Access Policy / RBAC
+↓
+dev namespace
+↓
+Deploy application
+
+
+GOLDEN RULE
+
+1. Role Trust Policy
+   → Who can assume the role?
+
+2. User Permission Policy
+   → Which role can the user assume?
+
+3. Role Permission Policy
+   → What AWS actions can the role perform?
+
+4. EKS Access Entry
+   → Which IAM role can access the EKS cluster?
+
+5. EKS Access Policy / Kubernetes RBAC
+   → What can that role do inside Kubernetes?
+
+
+ONE-LINE INTERVIEW ANSWER
+
+"I create an IAM role with the required permissions,
+configure its trust policy to trust the required principal, and grant the user sts:AssumeRole permission on that role. 
+The user then assumes the role and receives temporary credentials. For EKS,
+I additionally authorize the role through an EKS Access Entry and the required EKS access policy or Kubernetes RBAC permissions."
