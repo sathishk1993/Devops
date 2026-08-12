@@ -6,3 +6,66 @@ metadata:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted
+
+
+Privileged Standard  Privileged = "Almost no Pod security restrictions"
+--------------------
+- Privileged containers: allowed
+- Running as root: allowed
+- HostNetwork: allowed
+- HostPID: allowed
+- HostIPC: allowed
+- HostPath volumes: allowed
+- Linux capabilities: generally unrestricted
+- Privilege escalation: allowed
+- Seccomp: not required
+- AppArmor/SELinux restrictions: not enforced by this standard
+
+
+
+Baseline Standard  Baseline = "Block common dangerous Pod settings"
+-----------------
+- Privileged containers: NOT allowed
+- HostNetwork: NOT allowed
+- HostPID: NOT allowed
+- HostIPC: NOT allowed
+- HostPath volumes: NOT allowed
+- Dangerous Linux capabilities: restricted
+- Host ports: restricted
+- AppArmor/SELinux unsafe configurations: restricted
+- ProcMount: restricted
+- Seccomp: unsafe configurations restricted
+
+
+
+
+Restricted Standard   Restricted = "Strong Pod hardening"
+-------------------
+Everything from Baseline, plus:
+
+- Container must run as non-root
+- runAsNonRoot: required
+- Privilege escalation: NOT allowed
+- Seccomp profile: required
+- Allowed seccomp profiles are restricted
+- Linux capabilities: must drop ALL
+- Only limited capabilities can be added back
+- Host namespaces: NOT allowed
+- HostPath: NOT allowed
+- Privileged containers: NOT allowed
+- Host ports: restricted
+
+PSA MODES
+
+enforce
+  Violating Pods are rejected.
+
+audit
+  Violations are recorded in audit information.
+
+warn
+  User receives a warning.
+
+Important:
+enforce/audit/warn = modes
+privileged/baseline/restricted = security standards
