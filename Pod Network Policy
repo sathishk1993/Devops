@@ -19,3 +19,16 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+
+
+
+For reference: selects the destination pods.
+podSelector:
+  matchLabels:
+    app: backend
+
+selects the source pods
+from:
+  - podSelector:
+      matchLabels:
+        app: frontend
