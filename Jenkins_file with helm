@@ -155,3 +155,61 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: {{ .Values.service.targetPort }}
+
+
+
+JENKINS PIPELINE PARAMETERS – SIMPLE FLOW
+
+1. Add parameters {} to Jenkinsfile
+        ↓
+2. Commit and push Jenkinsfile to Git
+        ↓
+3. Jenkins loads the Jenkinsfile
+        ↓
+4. Open the Jenkins job
+        ↓
+5. Click "Build with Parameters"
+        ↓
+6. Enter/select the required values
+        ↓
+7. Click "Build"
+
+Jenkins will show:
+
+GIT_REPO       [https://github.com/...]
+BRANCH         [main]
+IMAGE_NAME     [payment-service]
+RELEASE_NAME   [payment]
+CHART_PATH     [./helm/payment]
+NAMESPACE      [dev]
+
+              [ Build ]
+
+Jenkins then uses these values inside the Jenkinsfile:
+
+params.GIT_REPO
+params.BRANCH
+params.IMAGE_NAME
+params.RELEASE_NAME
+params.CHART_PATH
+params.NAMESPACE
+
+Example:
+
+params.IMAGE_NAME
+        ↓
+payment-service
+
+params.RELEASE_NAME
+        ↓
+payment
+
+params.CHART_PATH
+        ↓
+./helm/payment
+
+params.NAMESPACE
+        ↓
+dev
+
+These values are then used by the Jenkins pipeline for Git checkout, Docker/ECR, and Helm deployment.
