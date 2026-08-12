@@ -1,0 +1,51 @@
+AWS NETWORK SECURITY
+
+Security Group (SG) = Firewall for an AWS resource.
+NACL = Firewall for a subnet.
+
+Security Group:
+
+* Resource level
+* Stateful
+* Allow rules
+* Used with EC2, ALB, RDS
+* Inbound = traffic coming in
+* Outbound = traffic going out
+
+NACL:
+
+* Subnet level
+* Stateless
+* Allow + Deny rules
+* Controls traffic entering and leaving a subnet
+
+Security Group vs NACL:
+Security Group → Resource → Stateful → Allow
+NACL → Subnet → Stateless → Allow + Deny
+
+Standard AWS flow:
+
+Internet → ALB → EC2 → RDS
+
+Internet → ALB = HTTPS 443
+ALB → EC2 = Application port 8080
+EC2 → RDS = MySQL 3306
+
+Security Group rules:
+
+ALB SG → Allow 443 from Internet
+EC2 SG → Allow 8080 from ALB SG
+RDS SG → Allow 3306 from EC2 SG
+
+Least privilege:
+
+Internet → ALB = Allow
+ALB → EC2 = Allow
+EC2 → RDS = Allow
+Internet → EC2 = Block
+Internet → RDS = Block
+
+Easy memory:
+
+Security Group = Resource + Stateful + Allow
+NACL = Subnet + Stateless + Allow/Deny
