@@ -81,7 +81,7 @@ pipeline {
             }
         }
 
-        stage('Push Image to ECR') {
+        stage('Push Image to Amazon ECR') {
             steps {
                 sh """
                 aws ecr get-login-password --region ${AWS_REGION} |
@@ -99,6 +99,9 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh """
+                kubectl apply -f bootstrap/
+                kubectl apply -f manifests/
+
                 kubectl set image deployment/${params.DEPLOYMENT_NAME} \
                 ${params.CONTAINER_NAME}=${ECR_REPO}:${IMAGE_TAG} \
                 -n ${params.NAMESPACE}
