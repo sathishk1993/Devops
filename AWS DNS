@@ -1,0 +1,257 @@
+AWS DNS + GoDaddy + Route 53 + ACM – Complete Flow
+
+STEP 1 – Register the domain in GoDaddy
+
+1. Go to GoDaddy.
+2. Search and purchase your domain.
+   Example:
+   myapp.com
+
+GoDaddy is the DOMAIN REGISTRAR.
+
+Domain:
+myapp.com
+
+
+STEP 2 – Create Hosted Zone in AWS Route 53
+
+1. AWS Console → Route 53.
+2. Go to Hosted Zones.
+3. Click Create Hosted Zone.
+4. Enter:
+   Domain name: myapp.com
+5. Select:
+   Public hosted zone
+6. Click Create Hosted Zone.
+
+Route 53 automatically creates:
+
+SOA record
+NS record
+
+
+STEP 3 – Copy Route 53 Nameservers
+
+Inside the Route 53 Hosted Zone, find the NS record.
+
+You will see something similar to:
+
+ns-123.awsdns-10.com
+ns-456.awsdns-20.net
+ns-789.awsdns-30.org
+ns-012.awsdns-40.co.uk
+
+Copy these 4 nameservers.
+
+
+STEP 4 – Update Nameservers in GoDaddy
+
+1. Go to GoDaddy.
+2. My Products → Domains.
+3. Select your domain.
+4. Go to DNS / Nameservers.
+5. Choose:
+   I'll use my own nameservers
+6. Replace GoDaddy nameservers with the 4 Route 53 nameservers.
+
+Example:
+
+GoDaddy
+   ↓
+Nameservers
+   ↓
+ns-123.awsdns-10.com
+ns-456.awsdns-20.net
+ns-789.awsdns-30.org
+ns-012.awsdns-40.co.uk
+
+Save the changes.
+
+Now:
+
+GoDaddy = Domain Registrar
+Route 53 = DNS Provider
+
+
+STEP 5 – Create ACM Certificate
+
+1. AWS Console → Certificate Manager (ACM).
+2. Make sure you select the AWS Region where the certificate will be used.
+   Example:
+   ap-south-1
+3. Click Request.
+4. Select Public Certificate.
+5. Enter your domain:
+
+myapp.com
+
+Optionally:
+
+*.myapp.com
+
+6. Select:
+   DNS validation
+7. Click Request.
+
+
+STEP 6 – ACM Gives You a CNAME
+
+ACM will provide something similar to:
+
+Name:
+_abc123.myapp.com
+
+Type:
+CNAME
+
+Value:
+_xyz456.acm-validations.aws.
+
+
+STEP 7 – Add ACM CNAME to Route 53
+
+Go to:
+
+Route 53
+→ Hosted Zones
+→ myapp.com
+→ Create Record
+
+Enter the CNAME provided by ACM.
+
+Record type:
+CNAME
+
+Record name:
+_abc123
+
+Value:
+_xyz456.acm-validations.aws.
+
+Save the record.
+
+
+STEP 8 – ACM Validates the Domain
+
+ACM checks the CNAME record.
+
+Flow:
+
+ACM
+ ↓
+Checks CNAME
+ ↓
+Route 53
+ ↓
+DNS validation successful
+ ↓
+ACM Certificate
+ ↓
+ISSUED
+
+
+STEP 9 – Create Application DNS Record
+
+Suppose your application is running behind an AWS Application Load Balancer.
+
+You want:
+
+https://app.myapp.com
+
+Then create a Route 53 record:
+
+Record name:
+app
+
+Record type:
+A
+
+Alias:
+ON
+
+Route traffic to:
+Application Load Balancer
+
+
+Final flow:
+
+User
+ ↓
+https://app.myapp.com
+ ↓
+Route 53
+ ↓
+A / Alias Record
+ ↓
+AWS Load Balancer
+ ↓
+EKS Ingress
+ ↓
+Kubernetes Service
+ ↓
+Pod
+ ↓
+Application
+
+
+IMPORTANT – Remember These Rules
+
+1. GoDaddy
+   = Domain Registrar
+
+2. Route 53
+   = DNS Provider
+
+3. Route 53 Hosted Zone
+   = Container for DNS records
+
+4. NS record
+   = Tells the internet which DNS servers manage the domain
+
+5. SOA record
+   = DNS authority information
+   Usually automatically created by Route 53
+
+6. ACM CNAME
+   = Used only for certificate/domain validation
+
+7. A record / Alias
+   = Used to send application traffic to your application/load balancer
+
+8. ACM does NOT create your Hosted Zone.
+
+9. Route 53 creates the Hosted Zone.
+
+10. ACM provides the CNAME value for DNS validation.
+
+Golden Flow:
+
+GoDaddy
+   ↓
+Register Domain
+   ↓
+Route 53
+   ↓
+Create Public Hosted Zone
+   ↓
+Get NS Records
+   ↓
+Update GoDaddy Nameservers
+   ↓
+Route 53 becomes DNS Provider
+   ↓
+ACM
+   ↓
+Request SSL Certificate
+   ↓
+DNS Validation
+   ↓
+ACM gives CNAME
+   ↓
+Add CNAME to Route 53
+   ↓
+Certificate ISSUED
+   ↓
+Create A/AAAA/ALIAS record
+   ↓
+Domain points to Load Balancer/Application
