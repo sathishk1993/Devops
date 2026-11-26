@@ -1,0 +1,236 @@
+# Real-Time DevOps Project – Jenkins + Nexus Integration
+
+## 1. Project Architecture
+
+GitHub → Jenkins → Maven Build → SonarQube Scan → Quality Gate → Trivy File Scan → Nexus Artifact Upload → Docker Build → Trivy Image Scan → AWS ECR → AWS EKS
+
+## 2. Prerequisites
+
+- Jenkins server installed.
+- Maven installed and configured in Jenkins.
+- Java installed.
+- Nexus Repository Manager installed.
+- SonarQube configured.
+- Trivy installed on Jenkins build agent.
+- Docker installed.
+- AWS CLI configured.
+- ECR repository created.
+- EKS cluster created.
+- GitHub repository containing Java application and pom.xml.
+
+## 3. Configure Nexus Repository
+
+1. Open Nexus: http://NEXUS-IP:8081
+2. Login as administrator.
+3. Navigate to Settings → Repositories.
+4. Click Create Repository.
+5. Select maven2 (hosted).
+6. Configure:
+
+Repository name: maven-releases
+Version policy: Release
+Layout policy: Strict
+Deployment policy: Disable redeploy (production)
+
+7. Create another repository:
+
+Repository name: maven-snapshots
+Version policy: Snapshot
+Layout policy: Strict
+Deployment policy: Allow redeploy
+
+8. Create a dedicated Jenkins service account.
+9. Give it the required repository read and upload permissions.
+
+## 4. Configure Jenkins Credentials
+
+Navigate to:
+
+Manage Jenkins → Credentials → System → Global Credentials → Add Credentials.
+
+Create:
+
+Kind: Username with password
+Username: jenkins-user
+Password: Nexus password
+ID: nexus-creds
+
+Also configure the credentials for:
+- SonarQube token.
+- AWS credentials or EC2 IAM role.
+- GitHub credentials if the repository is private.
+
+## 5. Configure pom.xml
+
+Add the following inside the pom.xml:
+
+<distributionManagement>
+    <repository>
+        <id>nexus-releases</id>
+        <url>http://NEXUS-PRIVATE-IP:8081/repository/maven-releases/</url>
+    </repository>
+
+    <snapshotRepository>
+        <id>nexus-snapshots</id>
+        <url>http://NEXUS-PRIVATE-IP:8081/repository/maven-snapshots/</url>
+    </snapshotRepository>
+</distributionManagement>
+
+Use a Maven settings.xml on the Jenkins build agent:
+
+<settings>
+    <servers>
+        <server>
+            <id>nexus-releases</id>
+            <username>${env.NEXUS_USERNAME}</username>
+            <password>${env.NEXUS_PASSWORD}</password>
+        </server>
+        <server>
+            <id>nexus-snapshots</id>
+            <username>${env.NEXUS_USERNAME}</username>
+            <password>${env.NEXUS_PASSWORD}</password>
+        </server>
+    </servers>
+</settings>
+
+The IDs in settings.xml must match the IDs in pom.xml.
+
+## 6. Configure Jenkins Pipeline
+
+Create a Jenkinsfile in your GitHub project.
+
+Configure the following stages:
+
+1. Git Checkout
+   - Download source code from GitHub.
+
+2. Maven Build
+   - Execute: mvn clean package
+   - Generate the JAR artifact.
+
+3. SonarQube Scan
+   - Scan source code.
+   - Generate code quality analysis.
+
+4. Quality Gate
+   - Check whether the project meets the configured quality requirements.
+
+5. Trivy File Scan
+   - Scan the filesystem and dependencies for vulnerabilities.
+
+6. Nexus Artifact Upload
+   - Use Jenkins Nexus credentials.
+   - Execute: mvn deploy
+   - Upload the JAR artifact to Nexus.
+
+7. Docker Build
+   - Create a Docker image using the generated JAR file.
+
+8. Trivy Image Scan
+   - Scan the Docker image for vulnerabilities.
+
+9. Push Docker Image to AWS ECR
+   - Authenticate Docker with ECR.
+   - Tag the image.
+   - Push the image to ECR.
+
+10. Deploy to AWS EKS
+    - Update the Kubernetes deployment with the new ECR image.
+    - Verify the deployment and pods.
+
+## 7. Important Maven Commands
+
+Build the application:
+
+mvn clean package
+
+Upload artifact to Nexus:
+
+mvn deploy
+
+Download dependencies:
+
+mvn dependency:resolve
+
+## 8. Verify Nexus Artifact
+
+Open Nexus Dashboard.
+
+Navigate to:
+
+Browse → maven-releases
+
+Verify that your JAR file is available.
+
+Example:
+
+com/example/banking-app/1.0/banking-app-1.0.jar
+
+## 9. Understand Artifact Storage
+
+GitHub:
+Stores source code.
+
+Maven:
+Builds and packages Java application.
+
+Nexus:
+Stores JAR, WAR and other application packages.
+
+SonarQube:
+Stores code quality analysis results.
+
+Trivy:
+Scans files and container images for vulnerabilities.
+
+Docker:
+Builds container images.
+
+AWS ECR:
+Stores Docker images.
+
+AWS EKS:
+Runs the application containers.
+
+## 10. Real-Time Pipeline Flow
+
+Developer pushes code to GitHub.
+
+Jenkins detects the change and starts the pipeline.
+
+Jenkins downloads source code.
+
+Maven builds the application and generates a JAR.
+
+SonarQube scans the source code.
+
+Quality Gate validates the code quality.
+
+Trivy scans the project files and dependencies.
+
+Maven deploy uploads the JAR to Nexus.
+
+Docker builds an image using the JAR.
+
+Trivy scans the Docker image.
+
+Jenkins pushes the Docker image to AWS ECR.
+
+Jenkins deploys the image to AWS EKS.
+
+Kubernetes starts the application pods.
+
+## 11. Production Best Practices
+
+- Use private IP communication between Jenkins and Nexus.
+- Never expose Nexus deployment credentials in Jenkinsfile.
+- Use Jenkins Credentials.
+- Use HTTPS for production Nexus access.
+- Use unique Maven release versions.
+- Do not overwrite released artifacts.
+- Use IAM roles instead of hardcoded AWS access keys.
+- Configure Trivy to fail the pipeline based on vulnerability severity.
+- Store scan reports as Jenkins build artifacts or in a dedicated reporting system.
+- Maintain separate repositories for releases and snapshots.
+- Use immutable Docker image tags instead of latest.
+- Configure backups for Nexus storage.
