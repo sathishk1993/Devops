@@ -1,236 +1,375 @@
-# Real-Time DevOps Project – Jenkins + Nexus Integration
+# NEXUS REPOSITORY – COMPLETE INSTALLATION AND JENKINS INTEGRATION
 
-## 1. Project Architecture
+Objective: Install Nexus Repository Manager on a separate Ubuntu EC2 instance and connect it with the existing Jenkins server and build server to store Maven artifacts (JAR files).
 
-GitHub → Jenkins → Maven Build → SonarQube Scan → Quality Gate → Trivy File Scan → Nexus Artifact Upload → Docker Build → Trivy Image Scan → AWS ECR → AWS EKS
+Architecture:
 
-## 2. Prerequisites
+GitHub → Jenkins Master → Build Server (Maven) → SonarQube → Trivy → Nexus → Docker → AWS ECR → AWS EKS
 
-- Jenkins server installed.
-- Maven installed and configured in Jenkins.
-- Java installed.
-- Nexus Repository Manager installed.
-- SonarQube configured.
-- Trivy installed on Jenkins build agent.
-- Docker installed.
-- AWS CLI configured.
-- ECR repository created.
-- EKS cluster created.
-- GitHub repository containing Java application and pom.xml.
+--------------------------------------------------
+1. CREATE NEXUS EC2 INSTANCE
+--------------------------------------------------
 
-## 3. Configure Nexus Repository
+Go to AWS Console → EC2 → Launch Instance.
 
-1. Open Nexus: http://NEXUS-IP:8081
-2. Login as administrator.
-3. Navigate to Settings → Repositories.
-4. Click Create Repository.
-5. Select maven2 (hosted).
-6. Configure:
+Configure:
 
-Repository name: maven-releases
-Version policy: Release
-Layout policy: Strict
-Deployment policy: Disable redeploy (production)
+Name: Nexus-Server
+AMI: Ubuntu Server 24.04 LTS
+Instance Type: t3.large
+Storage: 100 GB gp3
+Key Pair: Existing SSH key
+Security Group: Create new
 
-7. Create another repository:
+Inbound Rules:
 
-Repository name: maven-snapshots
-Version policy: Snapshot
-Layout policy: Strict
-Deployment policy: Allow redeploy
+SSH – Port 22 – Your IP
+Custom TCP – Port 8081 – Jenkins Security Group
+Custom TCP – Port 8081 – Your IP
 
-8. Create a dedicated Jenkins service account.
-9. Give it the required repository read and upload permissions.
+Launch the instance.
 
-## 4. Configure Jenkins Credentials
+Note the Nexus Public IP and Private IP.
 
-Navigate to:
+--------------------------------------------------
+2. CONNECT TO NEXUS SERVER
+--------------------------------------------------
+
+ssh -i your-key.pem ubuntu@NEXUS-PUBLIC-IP
+
+Update Ubuntu:
+
+sudo apt update
+sudo apt upgrade -y
+
+Install utilities:
+
+sudo apt install wget curl tar -y
+
+--------------------------------------------------
+3. CREATE NEXUS LINUX USER
+--------------------------------------------------
+
+sudo useradd --system --create-home --shell /bin/bash nexus
+
+sudo mkdir -p /opt/nexus
+sudo mkdir -p /opt/sonatype-work/nexus3
+
+sudo chown -R nexus:nexus /opt/nexus
+sudo chown -R nexus:nexus /opt/sonatype-work
+
+--------------------------------------------------
+4. DOWNLOAD AND EXTRACT NEXUS
+--------------------------------------------------
+
+Open the official download page:
+
+https://help.sonatype.com/en/download.html
+
+Download the latest Nexus Repository Manager Community Edition Linux x86-64 TAR.GZ distribution.
+
+Upload or download the archive to your Nexus EC2 instance.
+
+Example, if the archive is in /tmp:
+
+cd /tmp
+
+sudo tar -xzf nexus-unix-x86-64-3.96.3-01.tar.gz -C /opt/nexus
+
+Check extracted directory:
+
+ls -l /opt/nexus
+
+Create symbolic link using the actual extracted directory name:
+
+sudo ln -sfn /opt/nexus/nexus-3.96.3-01 /opt/nexus/current
+
+Set permissions:
+
+sudo chown -R nexus:nexus /opt/nexus
+sudo chown -R nexus:nexus /opt/sonatype-work
+
+Note: Nexus versions from 3.87 include their own Java 21 runtime.
+
+--------------------------------------------------
+5. CONFIGURE NEXUS USER
+--------------------------------------------------
+
+sudo nano /opt/nexus/current/bin/nexus.rc
+
+Add:
+
+run_as_user="nexus"
+
+Save and exit.
+
+--------------------------------------------------
+6. CONFIGURE NEXUS DATA DIRECTORY
+--------------------------------------------------
+
+sudo nano /opt/nexus/current/bin/nexus.vmoptions
+
+Find the existing karaf.data setting and update it to:
+
+-Dkaraf.data=/opt/sonatype-work/nexus3
+
+Save and exit.
+
+--------------------------------------------------
+7. CREATE SYSTEMD SERVICE
+--------------------------------------------------
+
+sudo nano /etc/systemd/system/nexus.service
+
+Paste:
+
+[Unit]
+Description=Nexus Repository Manager
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+User=nexus
+Group=nexus
+ExecStart=/opt/nexus/current/bin/nexus start
+ExecStop=/opt/nexus/current/bin/nexus stop
+Restart=on-failure
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
+
+Save and exit.
+
+Run:
+
+sudo systemctl daemon-reload
+
+sudo systemctl enable nexus
+
+sudo systemctl start nexus
+
+Check status:
+
+sudo systemctl status nexus
+
+Check logs:
+
+sudo tail -f /opt/sonatype-work/nexus3/log/nexus.log
+
+Wait until Nexus finishes starting.
+
+--------------------------------------------------
+8. ACCESS NEXUS DASHBOARD
+--------------------------------------------------
+
+Open browser:
+
+http://NEXUS-PUBLIC-IP:8081
+
+Get initial admin password:
+
+sudo cat /opt/sonatype-work/nexus3/admin.password
+
+Login:
+
+Username: admin
+Password: Initial password from the file
+
+Set a new admin password when prompted.
+
+--------------------------------------------------
+9. CREATE MAVEN HOSTED REPOSITORY
+--------------------------------------------------
+
+Inside Nexus Dashboard:
+
+Settings → Repositories → Create Repository → maven2 (hosted)
+
+Configure:
+
+Name: maven-releases
+Version Policy: Release
+Layout Policy: Strict
+Deployment Policy: Allow redeploy
+
+Click Create.
+
+Repository URL:
+
+http://NEXUS-PRIVATE-IP:8081/repository/maven-releases/
+
+--------------------------------------------------
+10. CREATE JENKINS USER IN NEXUS
+--------------------------------------------------
+
+Navigate:
+
+Security → Users → Create local user.
+
+Configure:
+
+Username: jenkins-user
+Password: Create a password
+Status: Active
+
+Assign the required repository read and upload permissions.
+
+Save.
+
+--------------------------------------------------
+11. TEST CONNECTION FROM JENKINS SERVER
+--------------------------------------------------
+
+Connect to Jenkins EC2.
+
+Run:
+
+curl -I http://NEXUS-PRIVATE-IP:8081
+
+Verify that Jenkins can reach Nexus.
+
+--------------------------------------------------
+12. ADD NEXUS CREDENTIALS IN JENKINS
+--------------------------------------------------
+
+Navigate:
 
 Manage Jenkins → Credentials → System → Global Credentials → Add Credentials.
 
-Create:
+Configure:
 
 Kind: Username with password
 Username: jenkins-user
-Password: Nexus password
+Password: Nexus user password
 ID: nexus-creds
 
-Also configure the credentials for:
-- SonarQube token.
-- AWS credentials or EC2 IAM role.
-- GitHub credentials if the repository is private.
+Save.
 
-## 5. Configure pom.xml
+--------------------------------------------------
+13. CONFIGURE MAVEN POM.XML
+--------------------------------------------------
 
-Add the following inside the pom.xml:
+In your Java application's pom.xml, add:
 
 <distributionManagement>
     <repository>
         <id>nexus-releases</id>
         <url>http://NEXUS-PRIVATE-IP:8081/repository/maven-releases/</url>
     </repository>
-
-    <snapshotRepository>
-        <id>nexus-snapshots</id>
-        <url>http://NEXUS-PRIVATE-IP:8081/repository/maven-snapshots/</url>
-    </snapshotRepository>
 </distributionManagement>
 
-Use a Maven settings.xml on the Jenkins build agent:
+--------------------------------------------------
+14. CONFIGURE MAVEN SETTINGS.XML
+--------------------------------------------------
+
+On the Jenkins build agent, create:
+
+mkdir -p ~/.m2
+
+nano ~/.m2/settings.xml
+
+Paste:
 
 <settings>
     <servers>
         <server>
             <id>nexus-releases</id>
-            <username>${env.NEXUS_USERNAME}</username>
-            <password>${env.NEXUS_PASSWORD}</password>
-        </server>
-        <server>
-            <id>nexus-snapshots</id>
-            <username>${env.NEXUS_USERNAME}</username>
-            <password>${env.NEXUS_PASSWORD}</password>
+            <username>jenkins-user</username>
+            <password>YOUR_NEXUS_PASSWORD</password>
         </server>
     </servers>
 </settings>
 
-The IDs in settings.xml must match the IDs in pom.xml.
+Save the file.
 
-## 6. Configure Jenkins Pipeline
+The repository ID in pom.xml and server ID in settings.xml must match.
 
-Create a Jenkinsfile in your GitHub project.
+--------------------------------------------------
+15. UPLOAD ARTIFACT TO NEXUS
+--------------------------------------------------
 
-Configure the following stages:
+From your Java project directory, execute:
 
-1. Git Checkout
-   - Download source code from GitHub.
+mvn clean deploy
 
-2. Maven Build
-   - Execute: mvn clean package
-   - Generate the JAR artifact.
+This performs:
 
-3. SonarQube Scan
-   - Scan source code.
-   - Generate code quality analysis.
+1. Compiles Java source code.
+2. Runs Maven tests.
+3. Packages the application.
+4. Generates the JAR artifact.
+5. Uploads the JAR to Nexus.
 
-4. Quality Gate
-   - Check whether the project meets the configured quality requirements.
+--------------------------------------------------
+16. VERIFY ARTIFACT IN NEXUS
+--------------------------------------------------
 
-5. Trivy File Scan
-   - Scan the filesystem and dependencies for vulnerabilities.
+Open:
 
-6. Nexus Artifact Upload
-   - Use Jenkins Nexus credentials.
-   - Execute: mvn deploy
-   - Upload the JAR artifact to Nexus.
+Nexus Dashboard → Browse → maven-releases
 
-7. Docker Build
-   - Create a Docker image using the generated JAR file.
-
-8. Trivy Image Scan
-   - Scan the Docker image for vulnerabilities.
-
-9. Push Docker Image to AWS ECR
-   - Authenticate Docker with ECR.
-   - Tag the image.
-   - Push the image to ECR.
-
-10. Deploy to AWS EKS
-    - Update the Kubernetes deployment with the new ECR image.
-    - Verify the deployment and pods.
-
-## 7. Important Maven Commands
-
-Build the application:
-
-mvn clean package
-
-Upload artifact to Nexus:
-
-mvn deploy
-
-Download dependencies:
-
-mvn dependency:resolve
-
-## 8. Verify Nexus Artifact
-
-Open Nexus Dashboard.
-
-Navigate to:
-
-Browse → maven-releases
-
-Verify that your JAR file is available.
+Verify your uploaded JAR.
 
 Example:
 
-com/example/banking-app/1.0/banking-app-1.0.jar
+com/example/banking-app/1.0.0/banking-app-1.0.0.jar
 
-## 9. Understand Artifact Storage
+--------------------------------------------------
+17. USEFUL NEXUS COMMANDS
+--------------------------------------------------
 
-GitHub:
-Stores source code.
+Start:
 
-Maven:
-Builds and packages Java application.
+sudo systemctl start nexus
 
-Nexus:
-Stores JAR, WAR and other application packages.
+Stop:
 
-SonarQube:
-Stores code quality analysis results.
+sudo systemctl stop nexus
 
-Trivy:
-Scans files and container images for vulnerabilities.
+Restart:
 
-Docker:
-Builds container images.
+sudo systemctl restart nexus
 
-AWS ECR:
-Stores Docker images.
+Status:
 
-AWS EKS:
-Runs the application containers.
+sudo systemctl status nexus
 
-## 10. Real-Time Pipeline Flow
+Logs:
 
-Developer pushes code to GitHub.
+sudo journalctl -u nexus -f
 
-Jenkins detects the change and starts the pipeline.
+Check port:
 
-Jenkins downloads source code.
+sudo ss -tulnp | grep 8081
 
-Maven builds the application and generates a JAR.
+Check disk:
 
-SonarQube scans the source code.
+df -h
 
-Quality Gate validates the code quality.
+Check memory:
 
-Trivy scans the project files and dependencies.
+free -h
 
-Maven deploy uploads the JAR to Nexus.
+--------------------------------------------------
+FINAL RESULT
+--------------------------------------------------
 
-Docker builds an image using the JAR.
+Nexus Repository Manager is installed on a separate EC2 instance.
 
-Trivy scans the Docker image.
+Jenkins communicates with Nexus through its private IP.
 
-Jenkins pushes the Docker image to AWS ECR.
+Maven builds the Java application and generates the JAR file.
 
-Jenkins deploys the image to AWS EKS.
+Jenkins uses Maven deploy to upload the JAR file to Nexus.
 
-Kubernetes starts the application pods.
+Nexus stores and manages the application artifacts.
 
-## 11. Production Best Practices
+The stored artifact can subsequently be used by the Docker build stage to create a container image for AWS ECR and deployment to AWS EKS.
 
-- Use private IP communication between Jenkins and Nexus.
-- Never expose Nexus deployment credentials in Jenkinsfile.
-- Use Jenkins Credentials.
-- Use HTTPS for production Nexus access.
-- Use unique Maven release versions.
-- Do not overwrite released artifacts.
-- Use IAM roles instead of hardcoded AWS access keys.
-- Configure Trivy to fail the pipeline based on vulnerability severity.
-- Store scan reports as Jenkins build artifacts or in a dedicated reporting system.
-- Maintain separate repositories for releases and snapshots.
-- Use immutable Docker image tags instead of latest.
-- Configure backups for Nexus storage.
+Official documentation:
+
+https://help.sonatype.com/en/installation.html
+
+https://help.sonatype.com/en/download.html
